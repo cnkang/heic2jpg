@@ -1,0 +1,46 @@
+name: Linting
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.14'
+
+    - name: Install uv
+      run: |
+        pip install uv
+
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras
+
+    - name: Run ruff linting
+      run: |
+        uv run ruff check . --output-format=github
+
+    - name: Run ruff formatting check
+      run: |
+        uv run ruff format --check .
+
+    - name: Run mypy type checking
+      run: |
+        uv run mypy src --show-error-codes --pretty
+
+    - name: Check for TODO/FIXME comments
+      run: |
+        ! grep -r "TODO\|FIXME" src/ || echo "Warning: Found TODO/FIXME comments"
+      continue-on-error: true

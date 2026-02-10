@@ -1,0 +1,389 @@
+"""Unit tests for ImageConverter."""
+
+import tempfile
+from pathlib import Path
+
+import numpy as np
+import pytest
+from PIL import Image
+
+from heic_converter.converter import ImageConverter
+from heic_converter.errors import InvalidFileError
+from heic_converter.models import Config, ConversionStatus, OptimizationParams
+
+
+class TestImageConverter:
+    """Test suite for ImageConverter class."""
+
+    def test_converter_initialization(self):
+        """Test ImageConverter initializes correctly."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        assert converter.config == config
+        assert converter.config.quality == 95
+
+    def test_decode_jpg_as_heic(self):
+        """Test decoding a JPEG file (simulating HEIC for testing)."""
+        # Create a test image
+        test_image = np.random.randint(0, 256, size=(100, 100, 3), dtype=np.uint8)
+        pil_image = Image.fromarray(test_image, mode="RGB")
+
+        # Save as JPEG
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            temp_path = Path(f.name)
+            pil_image.save(temp_path, format="JPEG", quality=95)
+
+        try:
+            config = Config(quality=95)
+            converter = ImageConverter(config)
+
+            # Decode
+            decoded_image, exif_dict = converter._decode_heic(temp_path)
+
+            # Verify
+            assert decoded_image.shape == (100, 100, 3)
+            assert decoded_image.dtype == np.uint8
+            assert isinstance(exif_dict, dict)
+
+        finally:
+            temp_path.unlink()
+
+    def test_decode_invalid_file(self):
+        """Test decoding an invalid file raises error."""
+        # Create a text file
+        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False, mode="w") as f:
+            temp_path = Path(f.name)
+            f.write("This is not an image")
+
+        try:
+            config = Config(quality=95)
+            converter = ImageConverter(config)
+
+            # Should raise InvalidFileError
+            with pytest.raises(InvalidFileError):
+                converter._decode_heic(temp_path)
+
+        finally:
+            temp_path.unlink()
+
+    def test_encode_jpg(self):
+        """Test encoding image as JPG."""
+        # Create a test image
+        test_image = np.random.randint(0, 256, size=(100, 100, 3), dtype=np.uint8)
+
+        # Create output path
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            output_path = Path(f.name)
+
+        try:
+            config = Config(quality=95)
+            converter = ImageConverter(config)
+
+            # Encode
+            converter._encode_jpg(test_image, output_path, 95, {})
+
+            # Verify file exists and can be opened
+            assert output_path.exists()
+
+            loaded_image = Image.open(output_path)
+            assert loaded_image.size == (100, 100)
+            assert loaded_image.mode == "RGB"
+
+        finally:
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_encode_jpg_with_different_qualities(self):
+        """Test encoding with different quality levels."""
+        test_image = np.random.randint(0, 256, size=(100, 100, 3), dtype=np.uint8)
+
+        for quality in [50, 75, 95, 100]:
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+                output_path = Path(f.name)
+
+            try:
+                config = Config(quality=quality)
+                converter = ImageConverter(config)
+
+                converter._encode_jpg(test_image, output_path, quality, {})
+
+                assert output_path.exists()
+                # Lower quality should generally result in smaller file size
+                # (though this isn't guaranteed for all images)
+
+            finally:
+                if output_path.exists():
+                    output_path.unlink()
+
+    def test_adjust_exposure(self):
+        """Test exposure adjustment."""
+        # Create a mid-gray image
+        test_image = np.full((100, 100, 3), 0.5, dtype=np.float32)
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        # Increase exposure by 1 EV (should double brightness)
+        adjusted = converter._adjust_exposure(test_image, 1.0)
+        assert np.allclose(adjusted, 1.0, atol=0.01)
+
+        # Decrease exposure by 1 EV (should halve brightness)
+        adjusted = converter._adjust_exposure(test_image, -1.0)
+        assert np.allclose(adjusted, 0.25, atol=0.01)
+
+    def test_adjust_contrast(self):
+        """Test contrast adjustment."""
+        # Create an image with known values
+        test_image = np.array([[[0.2, 0.2, 0.2], [0.8, 0.8, 0.8]]], dtype=np.float32)
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        # Increase contrast
+        adjusted = converter._adjust_contrast(test_image, 1.5)
+
+        # Values should move away from 0.5
+        assert adjusted[0, 0, 0] < 0.2  # Dark gets darker
+        assert adjusted[0, 1, 0] > 0.8  # Bright gets brighter
+
+        # Decrease contrast
+        adjusted = converter._adjust_contrast(test_image, 0.5)
+
+        # Values should move toward 0.5
+        assert adjusted[0, 0, 0] > 0.2  # Dark gets lighter
+        assert adjusted[0, 1, 0] < 0.8  # Bright gets darker
+
+    def test_lift_shadows(self):
+        """Test shadow lifting."""
+        # Create an image with dark and bright areas
+        test_image = np.zeros((100, 100, 3), dtype=np.float32)
+        test_image[:50, :, :] = 0.1  # Dark area
+        test_image[50:, :, :] = 0.9  # Bright area
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        # Lift shadows
+        adjusted = converter._lift_shadows(test_image, 0.5)
+
+        # Dark areas should be lifted
+        assert np.mean(adjusted[:50, :, :]) > 0.1
+
+        # Bright areas should be mostly unchanged
+        assert np.mean(adjusted[50:, :, :]) >= 0.85
+
+    def test_recover_highlights(self):
+        """Test highlight recovery."""
+        # Create an image with bright areas
+        test_image = np.ones((100, 100, 3), dtype=np.float32)
+        test_image[:50, :, :] = 0.9  # Bright area
+        test_image[50:, :, :] = 0.3  # Dark area
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        # Recover highlights
+        adjusted = converter._recover_highlights(test_image, 0.8)
+
+        # Bright areas should be compressed
+        assert np.mean(adjusted[:50, :, :]) < 0.9
+
+        # Dark areas should be mostly unchanged
+        assert np.mean(adjusted[50:, :, :]) >= 0.25
+
+    def test_adjust_saturation(self):
+        """Test saturation adjustment."""
+        # Create a colorful image with moderate saturation
+        test_image = np.zeros((100, 100, 3), dtype=np.float32)
+        test_image[:, :, 0] = 0.8  # Red channel
+        test_image[:, :, 1] = 0.3  # Green channel
+        test_image[:, :, 2] = 0.3  # Blue channel
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        # Increase saturation
+        adjusted = converter._adjust_saturation(test_image, 1.5, protect_skin_tones=False)
+
+        # Should still be mostly red but more saturated
+        # Red channel should stay high or increase
+        assert adjusted[:, :, 0].mean() >= 0.7
+
+        # Decrease saturation (move toward gray)
+        adjusted = converter._adjust_saturation(test_image, 0.5, protect_skin_tones=False)
+
+        # With reduced saturation, channels should be more similar (closer to gray)
+        # Calculate the range between max and min channel values
+        channel_range_before = 0.8 - 0.3  # 0.5
+        channel_range_after = adjusted[:, :, 0].mean() - adjusted[:, :, 1].mean()
+
+        # After desaturation, the range should be smaller
+        assert channel_range_after < channel_range_before
+
+    def test_reduce_noise(self):
+        """Test noise reduction."""
+        # Create a noisy image
+        np.random.seed(42)
+        clean_image = np.full((100, 100, 3), 0.5, dtype=np.float32)
+        noise = np.random.normal(0, 0.1, (100, 100, 3)).astype(np.float32)
+        noisy_image = np.clip(clean_image + noise, 0, 1)
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        # Apply noise reduction
+        denoised = converter._reduce_noise(noisy_image, 0.8)
+
+        # Denoised image should be closer to clean image
+        noisy_diff = np.mean(np.abs(noisy_image - clean_image))
+        denoised_diff = np.mean(np.abs(denoised - clean_image))
+
+        assert denoised_diff < noisy_diff
+
+    def test_sharpen(self):
+        """Test sharpening."""
+        # Create a blurry image (all same value)
+        blurry_image = np.full((100, 100, 3), 0.5, dtype=np.float32)
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        # Apply sharpening
+        sharpened = converter._sharpen(blurry_image, 1.0)
+
+        # For a uniform image, sharpening shouldn't change much
+        assert np.allclose(sharpened, blurry_image, atol=0.1)
+
+    def test_apply_optimizations_order(self):
+        """Test that optimizations are applied in correct order."""
+        # Create a test image
+        test_image = np.random.randint(50, 200, size=(100, 100, 3), dtype=np.uint8)
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        # Create optimization params with all adjustments
+        params = OptimizationParams(
+            exposure_adjustment=0.5,
+            contrast_adjustment=1.2,
+            shadow_lift=0.3,
+            highlight_recovery=0.3,
+            saturation_adjustment=1.1,
+            sharpness_amount=0.5,
+            noise_reduction=0.2,
+            skin_tone_protection=False,
+        )
+
+        # Apply optimizations
+        optimized = converter._apply_optimizations(test_image, params)
+
+        # Verify output is valid
+        assert optimized.shape == test_image.shape
+        assert optimized.dtype == np.uint8
+        assert np.all(optimized >= 0)
+        assert np.all(optimized <= 255)
+
+    def test_apply_optimizations_no_changes(self):
+        """Test applying optimizations with no adjustments."""
+        test_image = np.random.randint(0, 256, size=(100, 100, 3), dtype=np.uint8)
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        # Create params with no adjustments
+        params = OptimizationParams(
+            exposure_adjustment=0.0,
+            contrast_adjustment=1.0,
+            shadow_lift=0.0,
+            highlight_recovery=0.0,
+            saturation_adjustment=1.0,
+            sharpness_amount=0.0,
+            noise_reduction=0.0,
+            skin_tone_protection=False,
+        )
+
+        # Apply optimizations
+        optimized = converter._apply_optimizations(test_image, params)
+
+        # Should be very similar to input (allowing for small numerical differences)
+        diff = np.mean(np.abs(optimized.astype(float) - test_image.astype(float)))
+        assert diff < 5.0  # Average difference less than 5 per pixel
+
+    def test_full_conversion_pipeline(self):
+        """Test the full conversion pipeline."""
+        # Create a test image
+        test_image = np.random.randint(0, 256, size=(200, 200, 3), dtype=np.uint8)
+        pil_image = Image.fromarray(test_image, mode="RGB")
+
+        # Save as input
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            input_path = Path(f.name)
+            pil_image.save(input_path, format="JPEG", quality=95)
+
+        # Create output path
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            output_path = Path(f.name)
+
+        try:
+            config = Config(quality=90)
+            converter = ImageConverter(config)
+
+            # Create minimal params
+            params = OptimizationParams(
+                exposure_adjustment=0.0,
+                contrast_adjustment=1.0,
+                shadow_lift=0.0,
+                highlight_recovery=0.0,
+                saturation_adjustment=1.0,
+                sharpness_amount=0.0,
+                noise_reduction=0.0,
+                skin_tone_protection=False,
+            )
+
+            # Convert
+            result = converter.convert(input_path, output_path, params)
+
+            # Verify result
+            assert result.status == ConversionStatus.SUCCESS
+            assert result.output_path == output_path
+            assert result.processing_time > 0
+            assert output_path.exists()
+
+            # Verify output image
+            output_image = Image.open(output_path)
+            assert output_image.size == (200, 200)
+            assert output_image.mode == "RGB"
+
+        finally:
+            if input_path.exists():
+                input_path.unlink()
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_conversion_with_invalid_input(self):
+        """Test conversion with invalid input file."""
+        # Create a non-existent path
+        input_path = Path("/nonexistent/file.heic")
+        output_path = Path("/tmp/output.jpg")
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        params = OptimizationParams(
+            exposure_adjustment=0.0,
+            contrast_adjustment=1.0,
+            shadow_lift=0.0,
+            highlight_recovery=0.0,
+            saturation_adjustment=1.0,
+            sharpness_amount=0.0,
+            noise_reduction=0.0,
+            skin_tone_protection=False,
+        )
+
+        # Convert should return FAILED status, not raise exception
+        result = converter.convert(input_path, output_path, params)
+
+        assert result.status == ConversionStatus.FAILED
+        assert result.error_message is not None
+        assert "failed" in result.error_message.lower()

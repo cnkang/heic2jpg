@@ -1,0 +1,62 @@
+name: Security
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+
+jobs:
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.14'
+
+    - name: Install uv
+      run: |
+        pip install uv
+
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras
+
+    - name: Run bandit security scanner
+      run: |
+        uv run bandit -r src/ -f json -o bandit-report.json
+      continue-on-error: true
+
+    - name: Display bandit results
+      if: always()
+      run: |
+        if [ -f bandit-report.json ]; then
+          cat bandit-report.json
+        fi
+
+    - name: Run pip-audit for dependency vulnerabilities
+      run: |
+        uv pip install pip-audit
+        uv run pip-audit --desc
+      continue-on-error: true
+
+    - name: Check for hardcoded secrets
+      run: |
+        ! grep -r "password\|secret\|api_key\|token" src/ --include="*.py" | grep -v "# noqa" || echo "Warning: Potential hardcoded secrets found"
+      continue-on-error: true
+
+    - name: Upload bandit report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: bandit-security-report
+        path: bandit-report.json
