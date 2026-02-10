@@ -46,7 +46,7 @@ jobs:
         uv run pytest tests/property -v --ignore=tests/property/test_batch_processor_properties.py
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       if: matrix.os == 'ubuntu-latest'
       with:
         file: ./coverage.xml
