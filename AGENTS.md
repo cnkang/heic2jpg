@@ -217,6 +217,61 @@ Analysis metrics are saved as JSON files alongside outputs for:
 - Log errors with context
 - Don't fail silently
 
+## Commit and Review Best Practices
+
+### Conventional Commits (Required)
+
+All commits **must** use Conventional Commit format:
+
+```
+<type>(<scope>): <subject>
+```
+
+Examples:
+- `feat(cli): add batch progress summary table`
+- `fix(converter): preserve EXIF when converting non-RGB images`
+- `refactor(orchestrator): simplify batch flow control`
+- `test(converter): add regression tests for invalid EXIF payload`
+- `docs(agents): clarify commit and validation requirements`
+
+Allowed `type` values:
+- `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`, `ci`, `build`
+
+Rules:
+- Use imperative mood in subject (`add`, `fix`, `refactor`), not past tense.
+- Keep subject concise and specific (preferably <= 72 chars).
+- Make atomic commits: one logical concern per commit.
+- Separate source changes and test/doc updates into different commits when practical.
+
+### Commit Validation Checklist
+
+Before every commit, run relevant checks locally:
+
+```bash
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy src
+uv run pytest tests/unit -v
+uv run pytest tests/integration -v
+uv run pytest tests/property -v --ignore=tests/property/test_batch_processor_properties.py
+uv run bandit -r src/
+uv run pip-audit --desc
+```
+
+Minimum expectation:
+- No lint or type-check errors.
+- Updated/new tests for behavior changes.
+- No security scanner findings with unresolved risks.
+
+### Additional Engineering Practices
+
+- Prefer `time.perf_counter()` for duration measurement (avoid `time.time()` for elapsed timing).
+- Preserve exception chains with `raise ... from e` for debuggability.
+- Degrade gracefully for non-critical metadata failures (e.g., EXIF parse failure should not fail conversion).
+- Avoid redundant expensive operations in hot paths (e.g., duplicate disk reads/decodes in batch flow).
+- Keep performance-sensitive image operations vectorized with NumPy/OpenCV.
+- Document any intentional tradeoffs in code comments or commit body when behavior is non-obvious.
+
 ## Common Tasks
 
 ### Running Tests
@@ -328,4 +383,3 @@ Previously, property tests for batch processor caused segmentation faults due to
 - [Hypothesis Documentation](https://hypothesis.readthedocs.io/)
 - [Click Documentation](https://click.palletsprojects.com/)
 - [Rich Documentation](https://rich.readthedocs.io/)
-
