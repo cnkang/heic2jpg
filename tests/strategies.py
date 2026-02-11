@@ -112,9 +112,8 @@ def heic_files(
     pil_image = Image.fromarray(image_array, mode="RGB")
 
     # Create temporary file
-    temp_file = tempfile.NamedTemporaryFile(suffix=".heic", delete=False)
-    temp_path = Path(temp_file.name)
-    temp_file.close()
+    with tempfile.NamedTemporaryFile(suffix=".heic", delete=False) as temp_file:
+        temp_path = Path(temp_file.name)
 
     # Save as HEIC
     # Note: pillow-heif may not support writing HEIC on all platforms

@@ -264,9 +264,7 @@ def test_metrics_persistence_does_not_fail_conversion(metrics, has_output_path):
             # If output_path is None, no file should be created
             # If output_path exists, metrics file should be created
             if output_path:
-                metrics_path = output_path.with_suffix(".metrics.json")
-                # File may or may not exist depending on whether output_path parent exists
-                # But the call should not raise an exception
+                assert output_path.with_suffix(".metrics.json").name.endswith(".metrics.json")
         except Exception as e:
             pytest.fail(f"_persist_metrics should not raise exception, but raised: {e}")
 

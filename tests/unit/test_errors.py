@@ -440,6 +440,17 @@ class TestErrorHandlerIntegration:
         assert result.input_path == Path("test.heic")
         assert isinstance(result.input_path, Path)
 
+    def test_handle_error_with_non_path_safe_message_generation(self):
+        """Test that user message generation is resilient to unusual input_path values."""
+        handler = ErrorHandler()
+        error = InvalidFileError("Invalid file")
+        context = {"input_path": "bad\0path.heic"}
+
+        result = handler.handle_error(error, context)
+
+        assert result.status == ConversionStatus.FAILED
+        assert result.error_message is not None
+
     def test_handle_error_logs_error(self):
         """Test that handle_error logs the error."""
         mock_logger = MagicMock(spec=logging.Logger)

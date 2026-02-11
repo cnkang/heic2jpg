@@ -7,14 +7,19 @@ These tests verify end-to-end conversion workflows including:
 - Metrics persistence
 """
 
+from __future__ import annotations
+
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from PIL import Image
 
 from heic_converter.config import create_config
 from heic_converter.models import ConversionStatus
 from heic_converter.orchestrator import ConversionOrchestrator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestOrchestratorSingleFileIntegration:
@@ -198,7 +203,7 @@ class TestOrchestratorBatchConversionIntegration:
         assert len(batch_results.results) == 5
 
         # Verify all files were converted
-        for i, result in enumerate(batch_results.results):
+        for result in batch_results.results:
             assert result.status == ConversionStatus.SUCCESS
             assert result.output_path is not None
             assert result.output_path.exists()

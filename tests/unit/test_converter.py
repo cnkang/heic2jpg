@@ -2,6 +2,7 @@
 
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -66,6 +67,50 @@ class TestImageConverter:
 
         finally:
             temp_path.unlink()
+
+    def test_decode_heic_ignores_invalid_exif_payload(self):
+        """Test decode succeeds even if EXIF payload cannot be parsed."""
+        test_image = np.random.randint(0, 256, size=(32, 32, 3), dtype=np.uint8)
+        pil_image = Image.fromarray(test_image, mode="RGB")
+        pil_image.info["exif"] = b"invalid-exif"
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        with (
+            patch("heic_converter.converter.Image.open") as mock_open,
+            patch("heic_converter.converter.piexif.load", side_effect=ValueError("bad exif")),
+        ):
+            mock_open.return_value.__enter__.return_value = pil_image
+            decoded_image, exif_dict = converter._decode_heic(Path("dummy.heic"))
+
+        assert decoded_image.shape == (32, 32, 3)
+        assert decoded_image.dtype == np.uint8
+        assert exif_dict == {}
+
+    def test_decode_heic_preserves_exif_from_source_image(self):
+        """Test decode reads EXIF from source metadata before mode conversion."""
+        grayscale = np.random.randint(0, 256, size=(16, 16), dtype=np.uint8)
+        source_image = Image.fromarray(grayscale, mode="L")
+        source_image.info["exif"] = b"source-exif"
+        converted_image = source_image.convert("RGB")
+        converted_image.info.clear()
+
+        expected_exif = {"Exif": {34855: 200}}
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        with (
+            patch("heic_converter.converter.Image.open") as mock_open,
+            patch("heic_converter.converter.piexif.load", return_value=expected_exif),
+            patch.object(source_image, "convert", return_value=converted_image),
+        ):
+            mock_open.return_value.__enter__.return_value = source_image
+            decoded_image, exif_dict = converter._decode_heic(Path("dummy.heic"))
+
+        assert decoded_image.shape == (16, 16, 3)
+        assert exif_dict == expected_exif
 
     def test_encode_jpg(self):
         """Test encoding image as JPG."""
