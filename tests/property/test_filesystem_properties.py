@@ -12,6 +12,31 @@ from hypothesis import strategies as st
 
 from heic_converter.filesystem import FileSystemHandler
 
+WINDOWS_RESERVED_NAMES = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+}
+
 
 # Custom strategies for generating test data
 @st.composite
@@ -53,6 +78,21 @@ def malicious_paths(draw):
     return base_path / f"{filename}.heic"
 
 
+@st.composite
+def oversized_file_case(draw):
+    """Generate (max_size, actual_file_size) where actual_file_size > max_size."""
+    max_size = draw(st.integers(min_value=1024, max_value=1024 * 1024))
+    file_size = draw(st.integers(min_value=max_size + 1, max_value=max_size + 64 * 1024))
+    return max_size, file_size
+
+
+safe_path_component = st.text(
+    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
+    min_size=1,
+    max_size=20,
+).filter(lambda part: part.upper() not in WINDOWS_RESERVED_NAMES)
+
+
 # Feature: heic-to-jpg-converter, Property 10: Path Traversal Prevention
 @given(path=malicious_paths())
 @settings(max_examples=100)
@@ -82,16 +122,10 @@ def test_path_traversal_prevention(path):
 
 
 # Feature: heic-to-jpg-converter, Property 11: File Size Validation
-@given(
-    # Use smaller file sizes for faster testing (just above the limit)
-    file_size=st.integers(
-        min_value=FileSystemHandler.MAX_FILE_SIZE + 1,
-        max_value=FileSystemHandler.MAX_FILE_SIZE + 10 * 1024 * 1024,  # Max 10MB over limit
-    )
-)
+@given(case=oversized_file_case())
 @settings(max_examples=100, deadline=None)  # Disable deadline for file I/O operations
 @pytest.mark.property_test
-def test_file_size_validation(file_size):
+def test_file_size_validation(case):
     """Property 11: File Size Validation
 
     **Validates: Requirements 14.2**
@@ -99,23 +133,20 @@ def test_file_size_validation(file_size):
     For any file larger than the maximum allowed size (500MB), the converter should
     reject it with an error before attempting to load it into memory.
     """
-    # Create a FileSystemHandler instance
-    fs_handler = FileSystemHandler()
+    max_size, file_size = case
+    original_max_size = FileSystemHandler.MAX_FILE_SIZE
+    FileSystemHandler.MAX_FILE_SIZE = max_size
 
-    # Create a temporary file with the specified size
-    with tempfile.NamedTemporaryFile(suffix=".heic", delete=False) as tmp_file:
-        tmp_path = Path(tmp_file.name)
-        try:
-            # Write data to reach the desired file size
-            # Write in chunks to avoid memory issues
-            chunk_size = 1024 * 1024  # 1MB chunks
-            remaining = file_size
-            while remaining > 0:
-                write_size = min(chunk_size, remaining)
-                tmp_file.write(b"x" * write_size)
-                remaining -= write_size
+    try:
+        # Create a FileSystemHandler instance with patched size limit
+        fs_handler = FileSystemHandler()
 
-            tmp_file.flush()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir) / "oversized.heic"
+
+            # Set file length without creating massive real allocations on CI.
+            with open(tmp_path, "wb") as tmp_file:
+                tmp_file.truncate(file_size)
 
             # Validate the file
             result = fs_handler.validate_input_file(tmp_path)
@@ -130,23 +161,15 @@ def test_file_size_validation(file_size):
             assert "too large" in result.error_message.lower(), (
                 f"Error message should mention 'too large': {result.error_message}"
             )
-        finally:
-            # Clean up the temporary file
-            if tmp_path.exists():
-                tmp_path.unlink()
+    finally:
+        FileSystemHandler.MAX_FILE_SIZE = original_max_size
 
 
 # Feature: heic-to-jpg-converter, Property 27: Platform-Independent Path Handling
 @given(
     # Generate various path components
     path_components=st.lists(
-        st.text(
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-            ),
-            min_size=1,
-            max_size=20,
-        ),
+        safe_path_component,
         min_size=1,
         max_size=5,
     )

@@ -34,17 +34,15 @@ def test_conversion_preserves_dimensions(image):
     Property: For any valid image, converting it should produce a valid output
     with the same dimensions.
     """
-    # Create temporary input file (save as JPEG since we're testing the conversion logic)
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as input_file:
-        input_path = Path(input_file.name)
+    # Use a temporary directory so files are closed before cleanup (Windows-safe).
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        input_path = temp_path / "input.jpg"
+        output_path = temp_path / "output.jpg"
+
         pil_image = Image.fromarray(image, mode="RGB")
         pil_image.save(input_path, format="JPEG", quality=95)
 
-    # Create temporary output file
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as output_file:
-        output_path = Path(output_file.name)
-
-    try:
         # Create converter
         config = Config(quality=95)
         converter = ImageConverter(config)
@@ -74,18 +72,11 @@ def test_conversion_preserves_dimensions(image):
         # Verify dimensions are preserved
         input_height, input_width = image.shape[:2]
 
-        output_image = Image.open(output_path)
-        output_width, output_height = output_image.size
+        with Image.open(output_path) as output_image:
+            output_width, output_height = output_image.size
 
         assert output_width == input_width, f"Width mismatch: {output_width} != {input_width}"
         assert output_height == input_height, f"Height mismatch: {output_height} != {input_height}"
-
-    finally:
-        # Cleanup
-        if input_path.exists():
-            input_path.unlink()
-        if output_path.exists():
-            output_path.unlink()
 
 
 # Feature: heic-to-jpg-converter, Property 24: Highlight Preservation
