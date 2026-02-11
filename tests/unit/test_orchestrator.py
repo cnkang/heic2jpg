@@ -100,7 +100,7 @@ class TestConversionOrchestrator:
         # Mock the converter decode method
         mock_image = np.zeros((100, 100, 3), dtype=np.uint8)
         mock_exif = {}
-        orchestrator.converter._decode_heic = Mock(return_value=(mock_image, mock_exif))
+        orchestrator.converter._decode_heic = Mock(return_value=(mock_image, mock_exif, None))
 
         # Mock the analyzer
         orchestrator.analyzer.analyze = Mock(return_value=sample_image_metrics)

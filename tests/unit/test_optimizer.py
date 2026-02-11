@@ -165,8 +165,54 @@ class TestOptimizationParamGenerator:
 
         params = generator.generate(metrics)
 
-        # Should apply strong shadow lift for backlit images
-        assert params.shadow_lift > 0.4
+        # Backlit images should still receive meaningful shadow lift
+        assert params.shadow_lift > 0.1
+
+    def test_shadow_lift_is_limited_for_bright_backlit_images(self):
+        """Test that bright backlit images are not over-lifted."""
+        generator = OptimizationParamGenerator(StylePreferences())
+
+        metrics = ImageMetrics(
+            exposure_level=0.6,  # Already bright
+            contrast_level=0.6,
+            shadow_clipping_percent=1.0,  # Little clipping
+            highlight_clipping_percent=0.2,
+            saturation_level=1.0,
+            sharpness_score=0.5,
+            noise_level=0.3,
+            skin_tone_detected=False,
+            skin_tone_hue_range=None,
+            is_backlit=True,
+            is_low_light=False,
+            exif_data=None,
+        )
+
+        params = generator.generate(metrics)
+
+        assert params.shadow_lift < 0.2
+
+    def test_backlit_scene_enables_proactive_highlight_recovery(self):
+        """Test proactive highlight recovery for backlit scenes."""
+        generator = OptimizationParamGenerator(StylePreferences(preserve_highlights=True))
+
+        metrics = ImageMetrics(
+            exposure_level=0.0,
+            contrast_level=0.6,
+            shadow_clipping_percent=2.0,
+            highlight_clipping_percent=0.0,
+            saturation_level=1.0,
+            sharpness_score=0.5,
+            noise_level=0.3,
+            skin_tone_detected=False,
+            skin_tone_hue_range=None,
+            is_backlit=True,
+            is_low_light=False,
+            exif_data=None,
+        )
+
+        params = generator.generate(metrics)
+
+        assert params.highlight_recovery >= 0.1
 
     def test_shadow_lift_reduced_with_flash(self):
         """Test that shadow lift is reduced when flash was used."""

@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from heic_converter.analyzer import ImageAnalyzer
 from heic_converter.converter import ImageConverter
 from heic_converter.errors import InvalidFileError
 from heic_converter.models import Config, ConversionStatus, OptimizationParams
@@ -40,12 +41,13 @@ class TestImageConverter:
             converter = ImageConverter(config)
 
             # Decode
-            decoded_image, exif_dict = converter._decode_heic(temp_path)
+            decoded_image, exif_dict, icc_profile = converter._decode_heic(temp_path)
 
             # Verify
             assert decoded_image.shape == (100, 100, 3)
             assert decoded_image.dtype == np.uint8
             assert isinstance(exif_dict, dict)
+            assert icc_profile is None or isinstance(icc_profile, bytes)
 
         finally:
             temp_path.unlink()
@@ -82,11 +84,12 @@ class TestImageConverter:
             patch("heic_converter.converter.piexif.load", side_effect=ValueError("bad exif")),
         ):
             mock_open.return_value.__enter__.return_value = pil_image
-            decoded_image, exif_dict = converter._decode_heic(Path("dummy.heic"))
+            decoded_image, exif_dict, icc_profile = converter._decode_heic(Path("dummy.heic"))
 
         assert decoded_image.shape == (32, 32, 3)
         assert decoded_image.dtype == np.uint8
         assert exif_dict == {}
+        assert icc_profile is None
 
     def test_decode_heic_preserves_exif_from_source_image(self):
         """Test decode reads EXIF from source metadata before mode conversion."""
@@ -107,10 +110,11 @@ class TestImageConverter:
             patch.object(source_image, "convert", return_value=converted_image),
         ):
             mock_open.return_value.__enter__.return_value = source_image
-            decoded_image, exif_dict = converter._decode_heic(Path("dummy.heic"))
+            decoded_image, exif_dict, icc_profile = converter._decode_heic(Path("dummy.heic"))
 
         assert decoded_image.shape == (16, 16, 3)
         assert exif_dict == expected_exif
+        assert icc_profile is None
 
     def test_encode_jpg(self):
         """Test encoding image as JPG."""
@@ -161,6 +165,20 @@ class TestImageConverter:
             finally:
                 if output_path.exists():
                     output_path.unlink()
+
+    def test_encode_jpg_preserves_icc_profile(self, tmp_path):
+        """Test encoding preserves ICC profile when provided."""
+        test_image = np.random.randint(0, 256, size=(32, 32, 3), dtype=np.uint8)
+        output_path = tmp_path / "icc-test.jpg"
+        icc_profile = b"fake-icc-profile"
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        converter._encode_jpg(test_image, output_path, 95, {}, icc_profile=icc_profile)
+
+        with Image.open(output_path) as loaded_image:
+            assert loaded_image.info.get("icc_profile") == icc_profile
 
     def test_adjust_exposure(self):
         """Test exposure adjustment."""
@@ -237,6 +255,66 @@ class TestImageConverter:
 
         # Dark areas should be mostly unchanged
         assert np.mean(adjusted[50:, :, :]) >= 0.25
+
+    def test_auto_highlight_recovery_with_brightening_steps(self):
+        """Test adaptive highlight recovery reduces clipping after brightening."""
+        # Build an image with substantial near-highlight content.
+        test_image = np.full((200, 200, 3), 200, dtype=np.uint8)
+        test_image[:80, :, :] = 235
+        test_image[80:120, :, :] = 210
+        test_image[120:, :, :] = 120
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+        analyzer = ImageAnalyzer()
+
+        params = OptimizationParams(
+            exposure_adjustment=0.45,
+            contrast_adjustment=1.18,
+            shadow_lift=0.12,
+            highlight_recovery=0.0,
+            saturation_adjustment=1.0,
+            sharpness_amount=0.0,
+            noise_reduction=0.0,
+            skin_tone_protection=False,
+        )
+
+        # Baseline: same brightening steps but without highlight recovery.
+        baseline = test_image.astype(np.float32) / 255.0
+        baseline = converter._adjust_exposure(baseline, params.exposure_adjustment)
+        baseline = converter._adjust_contrast(baseline, params.contrast_adjustment)
+        baseline = converter._lift_shadows(baseline, params.shadow_lift)
+        baseline_u8 = np.clip(baseline * 255.0, 0, 255).astype(np.uint8)
+
+        optimized = converter._apply_optimizations(test_image, params)
+
+        baseline_metrics = analyzer.analyze(baseline_u8)
+        optimized_metrics = analyzer.analyze(optimized)
+
+        assert (
+            optimized_metrics.highlight_clipping_percent
+            < baseline_metrics.highlight_clipping_percent
+        )
+
+    def test_auto_highlight_recovery_skips_non_brightening_steps(self):
+        """Test adaptive highlight recovery remains off when no brightening is applied."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        image = np.random.rand(80, 80, 3).astype(np.float32)
+        params = OptimizationParams(
+            exposure_adjustment=-0.3,
+            contrast_adjustment=0.9,
+            shadow_lift=0.0,
+            highlight_recovery=0.0,
+            saturation_adjustment=1.0,
+            sharpness_amount=0.0,
+            noise_reduction=0.0,
+            skin_tone_protection=False,
+        )
+
+        auto_recovery = converter._calculate_auto_highlight_recovery(image, params)
+        assert auto_recovery == 0.0
 
     def test_adjust_saturation(self):
         """Test saturation adjustment."""
