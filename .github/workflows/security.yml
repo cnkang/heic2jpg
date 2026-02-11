@@ -34,7 +34,6 @@ jobs:
     - name: Run bandit security scanner
       run: |
         uv run bandit -r src/ -f json -o bandit-report.json
-      continue-on-error: true
 
     - name: Display bandit results
       if: always()
@@ -47,7 +46,6 @@ jobs:
       run: |
         uv pip install pip-audit
         uv run pip-audit --desc
-      continue-on-error: true
 
     - name: Check for hardcoded secrets
       run: |
