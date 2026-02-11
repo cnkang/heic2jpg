@@ -179,7 +179,9 @@ class BatchProcessor:
             duplicate_index = 0
 
             while output_path in used_paths:
-                output_path = self._with_collision_suffix(base_output_path, file_path, duplicate_index)
+                output_path = self._with_collision_suffix(
+                    base_output_path, file_path, duplicate_index
+                )
                 duplicate_index += 1
 
             if output_path != base_output_path:
@@ -198,11 +200,13 @@ class BatchProcessor:
         """Build a collision-safe output filename using a deterministic source hash."""
         try:
             source_key = str(file_path.resolve(strict=False))
-        except (OSError, RuntimeError):
+        except OSError, RuntimeError:
             source_key = str(file_path)
         source_hash = blake2s(source_key.encode("utf-8"), digest_size=4).hexdigest()
         ordinal_suffix = "" if index == 0 else f"_{index}"
-        unique_name = f"{base_output_path.stem}_{source_hash}{ordinal_suffix}{base_output_path.suffix}"
+        unique_name = (
+            f"{base_output_path.stem}_{source_hash}{ordinal_suffix}{base_output_path.suffix}"
+        )
         return base_output_path.with_name(unique_name)
 
 
