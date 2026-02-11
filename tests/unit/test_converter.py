@@ -131,9 +131,10 @@ class TestImageConverter:
             # Verify file exists and can be opened
             assert output_path.exists()
 
-            loaded_image = Image.open(output_path)
-            assert loaded_image.size == (100, 100)
-            assert loaded_image.mode == "RGB"
+            # Use context manager to ensure file is closed
+            with Image.open(output_path) as loaded_image:
+                assert loaded_image.size == (100, 100)
+                assert loaded_image.mode == "RGB"
 
         finally:
             if output_path.exists():
@@ -395,10 +396,10 @@ class TestImageConverter:
             assert result.processing_time > 0
             assert output_path.exists()
 
-            # Verify output image
-            output_image = Image.open(output_path)
-            assert output_image.size == (200, 200)
-            assert output_image.mode == "RGB"
+            # Verify output image - use context manager to ensure file is closed
+            with Image.open(output_path) as output_image:
+                assert output_image.size == (200, 200)
+                assert output_image.mode == "RGB"
 
         finally:
             if input_path.exists():
