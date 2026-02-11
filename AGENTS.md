@@ -162,6 +162,19 @@ Analysis metrics are saved as JSON files alongside outputs for:
 - Extension validation
 - No arbitrary code execution
 
+### 6. Quality Guardrails and Human Review
+- Optimize for broad real-world scenes, not only one failing sample:
+  - backlit subjects
+  - high dynamic range / bright specular highlights
+  - low-light and mixed indoor lighting
+  - high-ISO noise + fine detail
+- Any change in `analyzer.py`, `optimizer.py`, or `converter.py` must be validated on a diverse sample set (not just synthetic tests).
+- When automated metrics are inconclusive or confidence is low, do **not** over-correct aggressively.
+- In uncertain cases, allow and request human-in-the-loop visual judgment:
+  - produce a clear flagged list (`input -> output`) for manual review
+  - document why items were flagged (e.g., highlight clipping increase)
+  - treat human acceptance as the final decision for borderline cases
+
 ## Development Workflow
 
 ### Adding New Features
@@ -242,6 +255,11 @@ Rules:
 - Keep subject concise and specific (preferably <= 72 chars).
 - Make atomic commits: one logical concern per commit.
 - Separate source changes and test/doc updates into different commits when practical.
+- Commit messages must be written in English.
+- Split work into necessary commit batches following best practices. Recommended order when applicable:
+  1. production code changes (`feat`/`fix`/`refactor`)
+  2. test updates (`test`)
+  3. documentation updates (`docs`)
 
 ### Commit Validation Checklist
 

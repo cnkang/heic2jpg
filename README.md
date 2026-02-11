@@ -7,7 +7,7 @@ A Python application that converts iPhone HEIC photos to high-quality JPG format
 - **High Quality**: Default quality 100 (minimal JPEG compression) for optimal print quality
 - **Per-Image Optimization**: Each photo is analyzed and optimized individually
 - **Parallel Processing**: Fast batch conversion using multiple CPU cores
-- **EXIF Preservation**: Maintains all metadata from original files
+- **Metadata & Color Profile Preservation**: Preserves EXIF metadata and embedded ICC profile
 - **Cross-Platform**: Works on macOS, Windows, and Linux
 - **Smart Adjustments**: Handles challenging lighting conditions (overexposed, backlit, low-light)
 
@@ -196,6 +196,21 @@ uv run pytest tests/property -v --hypothesis-show-statistics
 # Run with coverage
 uv run pytest --cov=heic_converter --cov-report=html
 ```
+
+## Quality Validation and Manual Review
+
+For optimization changes, validate on a diverse real-image sample set rather than a single case.
+
+Recommended workflow:
+
+```bash
+# Convert a representative sample directory
+heic-converter samples/*.HEIC samples/*.heic --output-dir /tmp/sample-output
+```
+
+- Check flagged or borderline images manually (input vs output side-by-side).
+- If automated metrics and visual quality disagree, prioritize human visual judgment.
+- Keep a short review list of `input -> output` file pairs for final acceptance.
 
 ## Documentation
 

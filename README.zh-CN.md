@@ -7,7 +7,7 @@
 - **高质量**：默认质量 100（JPEG 最低压缩），确保最佳打印质量
 - **逐图优化**：每张照片单独分析和优化
 - **并行处理**：使用多个 CPU 核心快速批量转换
-- **EXIF 保留**：保持原始文件的所有元数据
+- **元数据与色彩配置保留**：保留 EXIF 元数据与嵌入式 ICC 色彩配置
 - **跨平台**：支持 macOS、Windows 和 Linux
 - **智能调整**：处理具有挑战性的光照条件（过曝、逆光、弱光）
 
@@ -196,6 +196,21 @@ uv run pytest tests/property -v --hypothesis-show-statistics
 # 运行测试并生成覆盖率报告
 uv run pytest --cov=heic_converter --cov-report=html
 ```
+
+## 质量验证与人工复核
+
+当调整优化逻辑时，建议基于多场景真实样本验证，而不是只看单一案例。
+
+推荐流程：
+
+```bash
+# 批量转换代表性样本目录
+heic-converter samples/*.HEIC samples/*.heic --output-dir /tmp/sample-output
+```
+
+- 对机器标记为风险或边缘可疑的图片做人工并排复核（输入 vs 输出）。
+- 当自动指标与肉眼观感不一致时，以人工视觉判断为最终依据。
+- 保留一份 `input -> output` 复核清单，便于最终验收。
 
 ## 文档
 

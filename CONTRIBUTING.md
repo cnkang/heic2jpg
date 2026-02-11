@@ -138,6 +138,10 @@ git add .
 git commit -m "feat: add new optimization parameter"
 ```
 
+Commit guidance:
+- Use English for all commit messages.
+- Keep commits atomic and split changes into logical batches (code, tests, docs) when practical.
+
 ### 6. Push and Create PR
 
 ```bash
@@ -270,6 +274,10 @@ def convert_image(input_path: Path, quality: int) -> ConversionResult:
 ## Commit Message Conventions
 
 We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+Additional requirements:
+- Commit messages must be in English.
+- Prefer small, reviewable commits and split by concern whenever possible.
 
 ### Format
 
@@ -466,4 +474,3 @@ python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumul
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
-
