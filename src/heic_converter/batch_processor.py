@@ -277,7 +277,7 @@ def _process_single_file_worker(
         filesystem.ensure_directory(target_output_path.parent)
 
         # Decode HEIC and extract EXIF
-        image_array, exif_dict = converter._decode_heic(file_path)
+        image_array, exif_dict, icc_profile = converter._decode_heic(file_path)
         exif_metadata = exif_extractor.extract_from_dict(exif_dict)
 
         # Analyze image
@@ -293,6 +293,7 @@ def _process_single_file_worker(
             optimization_params,
             decoded_image=image_array,
             decoded_exif=exif_dict,
+            decoded_icc_profile=icc_profile,
         )
 
         # Add metrics to result

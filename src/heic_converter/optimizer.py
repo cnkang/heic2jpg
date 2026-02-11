@@ -130,6 +130,10 @@ class OptimizationParamGenerator:
             # No recovery needed
             recovery = 0.0
 
+        # Proactive protection for backlit scenes where shadow lift may push highlights.
+        if metrics.is_backlit and metrics.exposure_level > -0.2:
+            recovery = max(recovery, 0.12)
+
         return float(np.clip(recovery, 0.0, 1.0))
 
     def _calculate_shadow_lift(self, metrics: ImageMetrics) -> float:
@@ -141,28 +145,37 @@ class OptimizationParamGenerator:
         Returns:
             Shadow lift amount (0.0 to 1.0)
         """
-        # Base shadow lift on clipping and backlit detection
-        if metrics.is_backlit:
-            # Strong shadow lift for backlit images
-            base_lift = 0.6
-        elif metrics.shadow_clipping_percent > 10.0:
-            # Moderate lift for significant shadow clipping
+        # Base shadow lift from measured clipping (conservative by default).
+        if metrics.shadow_clipping_percent > 12.0:
             base_lift = 0.4
-        elif metrics.shadow_clipping_percent > 5.0:
-            # Light lift for moderate shadow clipping
+        elif metrics.shadow_clipping_percent > 6.0:
             base_lift = 0.2
+        elif metrics.shadow_clipping_percent > 2.0:
+            base_lift = 0.1
         else:
-            # Minimal lift
             base_lift = 0.0
+
+        # Backlit scenes still need lift, but avoid globally flattening bright images.
+        if metrics.is_backlit:
+            backlit_lift = 0.18
+            if metrics.exposure_level < -0.35:
+                backlit_lift += 0.08
+            if metrics.shadow_clipping_percent > 10.0:
+                backlit_lift += 0.08
+            if metrics.exposure_level > 0.2:
+                backlit_lift -= 0.06
+            if metrics.highlight_clipping_percent > 1.0:
+                backlit_lift -= 0.05
+            backlit_lift = float(np.clip(backlit_lift, 0.08, 0.32))
+            base_lift = max(base_lift, backlit_lift)
 
         # Adjust based on EXIF flash information
         if metrics.exif_data and metrics.exif_data.flash_fired:
             # Reduce shadow lift if flash was used (shadows are already lifted)
             base_lift *= 0.5
 
-        # Apply style preference
-        # Reduce lift for more natural look
-        lift = base_lift * 0.8 if self.style_prefs.natural_appearance else base_lift
+        # Apply style preference (keep natural output conservative).
+        lift = base_lift * 0.85 if self.style_prefs.natural_appearance else base_lift
 
         return float(np.clip(lift, 0.0, 1.0))
 

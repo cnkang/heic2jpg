@@ -150,7 +150,7 @@ class ConversionOrchestrator:
 
             # 4. Decode HEIC and extract EXIF
             self.logger.debug(f"Decoding HEIC file: {input_path.name}")
-            image_array, exif_dict = self.converter._decode_heic(input_path)
+            image_array, exif_dict, icc_profile = self.converter._decode_heic(input_path)
             exif_metadata = self.exif_extractor.extract_from_dict(exif_dict)
 
             # 5. Analyze image
@@ -195,6 +195,7 @@ class ConversionOrchestrator:
                 optimization_params,
                 decoded_image=image_array,
                 decoded_exif=exif_dict,
+                decoded_icc_profile=icc_profile,
             )
 
             # Add metrics to result

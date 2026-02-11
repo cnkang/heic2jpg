@@ -31,6 +31,11 @@ ExifDict = dict[str, Any]
 class ImageConverter:
     """Convert HEIC files to JPG with optimizations."""
 
+    AUTO_HIGHLIGHT_TRIGGER_PERCENT = 0.7
+    AUTO_HIGHLIGHT_BASE = 0.10
+    AUTO_HIGHLIGHT_SLOPE = 0.04
+    AUTO_HIGHLIGHT_MAX = 0.45
+
     def __init__(self, config: Config):
         """Initialize with configuration.
 
@@ -48,6 +53,7 @@ class ImageConverter:
         optimization_params: OptimizationParams,
         decoded_image: NDArray[np.uint8] | None = None,
         decoded_exif: ExifDict | None = None,
+        decoded_icc_profile: bytes | None = None,
     ) -> ConversionResult:
         """Convert HEIC to JPG with optimizations.
 
@@ -57,6 +63,7 @@ class ImageConverter:
             optimization_params: Optimization parameters to apply
             decoded_image: Optional pre-decoded RGB image array to avoid re-decoding
             decoded_exif: Optional EXIF dictionary associated with decoded_image
+            decoded_icc_profile: Optional ICC profile associated with decoded_image
 
         Returns:
             ConversionResult with conversion status and details
@@ -70,17 +77,24 @@ class ImageConverter:
         try:
             if decoded_image is None:
                 # Decode HEIC file
-                image_array, exif_dict = self._decode_heic(input_path)
+                image_array, exif_dict, icc_profile = self._decode_heic(input_path)
             else:
                 # Reuse pre-decoded image/exif when already available in the caller.
                 image_array = decoded_image
                 exif_dict = decoded_exif or {}
+                icc_profile = decoded_icc_profile
 
             # Apply optimizations
             optimized_image = self._apply_optimizations(image_array, optimization_params)
 
             # Encode as JPG
-            self._encode_jpg(optimized_image, output_path, self.config.quality, exif_dict)
+            self._encode_jpg(
+                optimized_image,
+                output_path,
+                self.config.quality,
+                exif_dict,
+                icc_profile,
+            )
 
             processing_time = perf_counter() - start_time
 
@@ -104,16 +118,17 @@ class ImageConverter:
                 processing_time=processing_time,
             )
 
-    def _decode_heic(self, path: Path) -> tuple[NDArray[np.uint8], ExifDict]:
+    def _decode_heic(self, path: Path) -> tuple[NDArray[np.uint8], ExifDict, bytes | None]:
         """Decode HEIC file and extract EXIF metadata.
 
         Args:
             path: Path to HEIC file
 
         Returns:
-            Tuple of (image_array, exif_dict)
+            Tuple of (image_array, exif_dict, icc_profile)
             image_array is RGB numpy array (uint8)
             exif_dict is EXIF data dictionary
+            icc_profile is raw ICC profile bytes if available
 
         Raises:
             InvalidFileError: If file cannot be decoded
@@ -130,6 +145,11 @@ class ImageConverter:
                         loaded_exif = piexif.load(exif_blob)
                         if isinstance(loaded_exif, dict):
                             exif_dict = loaded_exif
+                icc_profile = (
+                    img.info.get("icc_profile")
+                    if isinstance(img.info.get("icc_profile"), bytes)
+                    else None
+                )
 
                 # Convert to RGB if necessary
                 rgb_img: Image.Image = img.convert("RGB") if img.mode != "RGB" else img
@@ -137,7 +157,7 @@ class ImageConverter:
                 # Convert to numpy array
                 image_array = np.array(rgb_img, dtype=np.uint8)
 
-            return image_array, exif_dict
+            return image_array, exif_dict, icc_profile
 
         except Exception as e:
             raise InvalidFileError(f"Failed to decode HEIC file {path}: {str(e)}") from e
@@ -181,8 +201,13 @@ class ImageConverter:
             img_float = self._lift_shadows(img_float, params.shadow_lift)
 
         # 4. Highlight recovery (compress bright values)
-        if params.highlight_recovery > 0.01:
-            img_float = self._recover_highlights(img_float, params.highlight_recovery)
+        # Add adaptive recovery only when prior operations may have increased clipping.
+        effective_highlight_recovery = max(
+            params.highlight_recovery,
+            self._calculate_auto_highlight_recovery(img_float, params),
+        )
+        if effective_highlight_recovery > 0.01:
+            img_float = self._recover_highlights(img_float, effective_highlight_recovery)
 
         # 5. Saturation adjustment (modify in HSV space)
         if abs(params.saturation_adjustment - 1.0) > 0.01:
@@ -201,6 +226,40 @@ class ImageConverter:
         # Convert back to uint8
         img_float = np.clip(img_float, 0.0, 1.0)
         return cast("NDArray[np.uint8]", (img_float * 255.0).astype(np.uint8))
+
+    def _calculate_auto_highlight_recovery(
+        self,
+        image: NDArray[np.float32],
+        params: OptimizationParams,
+    ) -> float:
+        """Estimate additional highlight recovery needed after brightening steps.
+
+        This guard is intentionally conservative: it only activates when exposure,
+        contrast, or shadow lifting can push bright tones into clipping.
+        """
+        has_brightening_step = (
+            params.exposure_adjustment > 0.0
+            or params.contrast_adjustment > 1.0
+            or params.shadow_lift > 0.0
+        )
+        if not has_brightening_step:
+            return 0.0
+
+        highlight_clipping = self._estimate_highlight_clipping_percent(image)
+        if highlight_clipping <= self.AUTO_HIGHLIGHT_TRIGGER_PERCENT:
+            return 0.0
+
+        auto_recovery = (
+            self.AUTO_HIGHLIGHT_BASE
+            + (highlight_clipping - self.AUTO_HIGHLIGHT_TRIGGER_PERCENT) * self.AUTO_HIGHLIGHT_SLOPE
+        )
+        return float(np.clip(auto_recovery, 0.0, self.AUTO_HIGHLIGHT_MAX))
+
+    def _estimate_highlight_clipping_percent(self, image: NDArray[np.float32]) -> float:
+        """Estimate highlight clipping percentage on a float RGB image."""
+        luminance = 0.299 * image[:, :, 0] + 0.587 * image[:, :, 1] + 0.114 * image[:, :, 2]
+        clipped = np.sum(luminance >= (250.0 / 255.0))
+        return float((clipped / luminance.size) * 100.0)
 
     def _adjust_exposure(
         self, image: NDArray[np.float32], adjustment_ev: float
@@ -247,14 +306,12 @@ class ImageConverter:
         Returns:
             Adjusted image
         """
-        # Create shadow mask (stronger effect on darker pixels)
-        # Use luminance to determine shadows
+        # Build a soft shadow mask so adjustments stay focused on darker tones.
         luminance = 0.299 * image[:, :, 0] + 0.587 * image[:, :, 1] + 0.114 * image[:, :, 2]
-        shadow_mask = 1.0 - luminance  # Inverted: 1 for dark, 0 for bright
-
-        # Apply lift with mask
-        lift = amount * shadow_mask[:, :, np.newaxis]
-        adjusted = image + lift
+        shadow_mask = np.clip((0.55 - luminance) / 0.55, 0.0, 1.0)
+        # Higher exponent reduces midtone lift and helps preserve overall contrast.
+        gain = 1.0 + amount * np.power(shadow_mask, 1.8)
+        adjusted = image * gain[:, :, np.newaxis]
 
         return cast("NDArray[np.float32]", np.clip(adjusted, 0.0, 1.0))
 
@@ -403,6 +460,7 @@ class ImageConverter:
         path: Path,
         quality: int,
         exif: ExifDict,
+        icc_profile: bytes | None = None,
     ) -> None:
         """Encode image as JPG with EXIF metadata.
 
@@ -411,6 +469,7 @@ class ImageConverter:
             path: Output path for JPG file
             quality: JPG quality (0-100)
             exif: EXIF metadata dictionary
+            icc_profile: Optional ICC profile bytes to preserve source color profile
 
         Raises:
             ProcessingError: If encoding fails
@@ -425,11 +484,18 @@ class ImageConverter:
                 with contextlib.suppress(Exception):
                     exif_bytes = piexif.dump(exif)
 
-            # Save as JPG
+            save_kwargs: dict[str, Any] = {
+                "format": "JPEG",
+                "quality": quality,
+                "optimize": True,
+            }
             if exif_bytes:
-                pil_image.save(path, format="JPEG", quality=quality, optimize=True, exif=exif_bytes)
-            else:
-                pil_image.save(path, format="JPEG", quality=quality, optimize=True)
+                save_kwargs["exif"] = exif_bytes
+            if icc_profile:
+                save_kwargs["icc_profile"] = icc_profile
+
+            # Save as JPG
+            pil_image.save(path, **save_kwargs)
 
         except Exception as e:
             raise ProcessingError(f"Failed to encode JPG file {path}: {str(e)}") from e
