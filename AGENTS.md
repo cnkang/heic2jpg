@@ -335,7 +335,7 @@ uv run mypy src
 
 ### Test Coverage
 
-The project maintains 93% code coverage with 299 passing tests:
+Current local baseline (as of 2026-02-11): 94% code coverage with 302 passing tests.
 - Unit tests: Test individual functions and classes
 - Integration tests: Test end-to-end workflows
 - Property-based tests: Test universal properties with Hypothesis

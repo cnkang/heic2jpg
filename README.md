@@ -4,7 +4,7 @@ A Python application that converts iPhone HEIC photos to high-quality JPG format
 
 ## Features
 
-- **High Quality**: Default quality 100 (uncompressed) for optimal print quality
+- **High Quality**: Default quality 100 (minimal JPEG compression) for optimal print quality
 - **Per-Image Optimization**: Each photo is analyzed and optimized individually
 - **Parallel Processing**: Fast batch conversion using multiple CPU cores
 - **EXIF Preservation**: Maintains all metadata from original files

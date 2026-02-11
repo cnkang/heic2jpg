@@ -306,8 +306,8 @@ This implementation plan breaks down the HEIC to JPG converter into incremental,
   - [x] 16.1 Implement output file handling
     - Implement filename transformation (.heic -> .jpg)
     - Implement output directory specification
-    - Implement filename pattern support
-    - Implement overwrite confirmation prompt
+    - (Not implemented) filename pattern support
+    - (Not implemented) interactive overwrite confirmation prompt
     - Implement no-overwrite flag behavior
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5_
   
@@ -319,7 +319,7 @@ This implementation plan breaks down the HEIC to JPG converter into incremental,
     - **Property 19: Output Directory Specification**
     - **Validates: Requirements 18.2**
   
-  - [x] 16.4 Write property test for filename patterns
+  - [ ] 16.4 Write property test for filename patterns
     - **Property 20: Output Filename Pattern Application**
     - **Validates: Requirements 18.3**
   
@@ -327,7 +327,7 @@ This implementation plan breaks down the HEIC to JPG converter into incremental,
     - **Property 21: No-Overwrite Flag Behavior**
     - **Validates: Requirements 18.5**
   
-  - [x] 16.6 Write unit test for overwrite prompt
+  - [ ] 16.6 Write unit test for overwrite prompt
     - Test that prompt is shown when file exists
     - _Requirements: 18.4_
 
@@ -356,7 +356,7 @@ This implementation plan breaks down the HEIC to JPG converter into incremental,
     - _Requirements: 17.1, 17.2, 17.4, 17.5_
 
 - [x] 18. CLI display and formatting
-  - [x] 18.1 Implement CLIInterface display methods
+  - [x] 18.1 Implement CLI display functions
     - Implement progress display using rich progress bars
     - Implement summary display with success/failure counts
     - Implement error display with formatting

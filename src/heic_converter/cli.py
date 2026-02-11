@@ -152,7 +152,7 @@ def handle_error(error: Exception) -> None:
     "-q",
     type=click.IntRange(0, 100),
     default=None,
-    help="JPG quality level (0-100). Default: 100 (uncompressed).",
+    help="JPG quality level (0-100). Default: 100 (minimal compression).",
 )
 @click.option(
     "--output-dir",
