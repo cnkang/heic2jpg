@@ -1,7 +1,10 @@
 """Image converter core for HEIC to JPG conversion."""
 
-from pathlib import Path
-from typing import TYPE_CHECKING
+from __future__ import annotations
+
+import contextlib
+from time import perf_counter
+from typing import TYPE_CHECKING, Any, cast
 
 import cv2
 import numpy as np
@@ -18,7 +21,11 @@ from heic_converter.models import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from numpy.typing import NDArray
+
+ExifDict = dict[str, Any]
 
 
 class ImageConverter:
@@ -54,9 +61,7 @@ class ImageConverter:
             InvalidFileError: If input file cannot be read
             ProcessingError: If conversion fails
         """
-        import time
-
-        start_time = time.time()
+        start_time = perf_counter()
 
         try:
             # Decode HEIC file
@@ -68,7 +73,7 @@ class ImageConverter:
             # Encode as JPG
             self._encode_jpg(optimized_image, output_path, self.config.quality, exif_dict)
 
-            processing_time = time.time() - start_time
+            processing_time = perf_counter() - start_time
 
             return ConversionResult(
                 input_path=input_path,
@@ -79,7 +84,7 @@ class ImageConverter:
             )
 
         except Exception as e:
-            processing_time = time.time() - start_time
+            processing_time = perf_counter() - start_time
             error_message = f"Conversion failed: {str(e)}"
 
             return ConversionResult(
@@ -90,7 +95,7 @@ class ImageConverter:
                 processing_time=processing_time,
             )
 
-    def _decode_heic(self, path: Path) -> tuple[NDArray[np.uint8], dict]:
+    def _decode_heic(self, path: Path) -> tuple[NDArray[np.uint8], ExifDict]:
         """Decode HEIC file and extract EXIF metadata.
 
         Args:
@@ -107,22 +112,26 @@ class ImageConverter:
         try:
             # Open HEIC file using Pillow with pillow-heif
             with Image.open(path) as img:
-                # Convert to RGB if necessary
-                if img.mode != "RGB":
-                    img = img.convert("RGB")
+                # Parse EXIF from the original image metadata.
+                # This avoids depending on converted-image info propagation.
+                exif_blob = img.info.get("exif")
+                exif_dict: ExifDict = {}
+                if exif_blob:
+                    with contextlib.suppress(Exception):
+                        loaded_exif = piexif.load(exif_blob)
+                        if isinstance(loaded_exif, dict):
+                            exif_dict = loaded_exif
 
-                # Extract EXIF data
-                exif_dict = {}
-                if "exif" in img.info:
-                    exif_dict = piexif.load(img.info["exif"])
+                # Convert to RGB if necessary
+                rgb_img: Image.Image = img.convert("RGB") if img.mode != "RGB" else img
 
                 # Convert to numpy array
-                image_array = np.array(img, dtype=np.uint8)
+                image_array = np.array(rgb_img, dtype=np.uint8)
 
             return image_array, exif_dict
 
         except Exception as e:
-            raise InvalidFileError(f"Failed to decode HEIC file {path}: {str(e)}")
+            raise InvalidFileError(f"Failed to decode HEIC file {path}: {str(e)}") from e
 
     def _apply_optimizations(
         self,
@@ -182,7 +191,7 @@ class ImageConverter:
 
         # Convert back to uint8
         img_float = np.clip(img_float, 0.0, 1.0)
-        return (img_float * 255.0).astype(np.uint8)
+        return cast("NDArray[np.uint8]", (img_float * 255.0).astype(np.uint8))
 
     def _adjust_exposure(
         self, image: NDArray[np.float32], adjustment_ev: float
@@ -200,7 +209,7 @@ class ImageConverter:
         multiplier = 2.0**adjustment_ev
 
         # Apply to all channels
-        return np.clip(image * multiplier, 0.0, 1.0)
+        return cast("NDArray[np.float32]", np.clip(image * multiplier, 0.0, 1.0))
 
     def _adjust_contrast(
         self, image: NDArray[np.float32], multiplier: float
@@ -217,7 +226,7 @@ class ImageConverter:
         # Apply contrast curve: (x - 0.5) * multiplier + 0.5
         # This pivots around middle gray
         adjusted = (image - 0.5) * multiplier + 0.5
-        return np.clip(adjusted, 0.0, 1.0)
+        return cast("NDArray[np.float32]", np.clip(adjusted, 0.0, 1.0))
 
     def _lift_shadows(self, image: NDArray[np.float32], amount: float) -> NDArray[np.float32]:
         """Lift shadow values without affecting highlights.
@@ -238,7 +247,7 @@ class ImageConverter:
         lift = amount * shadow_mask[:, :, np.newaxis]
         adjusted = image + lift
 
-        return np.clip(adjusted, 0.0, 1.0)
+        return cast("NDArray[np.float32]", np.clip(adjusted, 0.0, 1.0))
 
     def _recover_highlights(self, image: NDArray[np.float32], amount: float) -> NDArray[np.float32]:
         """Recover highlight detail by compressing bright values.
@@ -268,7 +277,7 @@ class ImageConverter:
         )
         adjusted = image - compression
 
-        return np.clip(adjusted, 0.0, 1.0)
+        return cast("NDArray[np.float32]", np.clip(adjusted, 0.0, 1.0))
 
     def _adjust_saturation(
         self,
@@ -291,6 +300,7 @@ class ImageConverter:
 
         # Convert to HSV
         hsv = cv2.cvtColor(img_uint8, cv2.COLOR_RGB2HSV).astype(np.float32)
+        original_saturation = hsv[:, :, 1].copy()
 
         # Adjust saturation
         hsv[:, :, 1] *= multiplier
@@ -304,7 +314,7 @@ class ImageConverter:
             # Reduce saturation adjustment by 50% in skin tone areas
             hsv[:, :, 1] = np.where(
                 skin_mask,
-                img_uint8[:, :, 1] * (1.0 + (multiplier - 1.0) * 0.5),
+                original_saturation * (1.0 + (multiplier - 1.0) * 0.5),
                 hsv[:, :, 1],
             )
 
@@ -376,14 +386,14 @@ class ImageConverter:
             0,
         )
 
-        return np.clip(sharpened, 0, 255).astype(np.float32) / 255.0
+        return cast("NDArray[np.float32]", np.clip(sharpened, 0, 255).astype(np.float32) / 255.0)
 
     def _encode_jpg(
         self,
         image: NDArray[np.uint8],
         path: Path,
         quality: int,
-        exif: dict,
+        exif: ExifDict,
     ) -> None:
         """Encode image as JPG with EXIF metadata.
 
@@ -403,23 +413,14 @@ class ImageConverter:
             # Prepare EXIF data if available
             exif_bytes = None
             if exif:
-                try:
+                with contextlib.suppress(Exception):
                     exif_bytes = piexif.dump(exif)
-                except Exception:
-                    # If EXIF processing fails, continue without it
-                    pass
 
             # Save as JPG
-            save_kwargs = {
-                "format": "JPEG",
-                "quality": quality,
-                "optimize": True,
-            }
-
             if exif_bytes:
-                save_kwargs["exif"] = exif_bytes
-
-            pil_image.save(path, **save_kwargs)
+                pil_image.save(path, format="JPEG", quality=quality, optimize=True, exif=exif_bytes)
+            else:
+                pil_image.save(path, format="JPEG", quality=quality, optimize=True)
 
         except Exception as e:
-            raise ProcessingError(f"Failed to encode JPG file {path}: {str(e)}")
+            raise ProcessingError(f"Failed to encode JPG file {path}: {str(e)}") from e

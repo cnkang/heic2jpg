@@ -1,11 +1,16 @@
 """File system operations with security validation for HEIC converter."""
 
+from __future__ import annotations
+
 import contextlib
 import os
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .errors import InvalidFileError, SecurityError
 from .models import ValidationResult
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class FileSystemHandler:

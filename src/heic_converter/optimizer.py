@@ -161,11 +161,8 @@ class OptimizationParamGenerator:
             base_lift *= 0.5
 
         # Apply style preference
-        if self.style_prefs.natural_appearance:
-            # Reduce lift for more natural look
-            lift = base_lift * 0.8
-        else:
-            lift = base_lift
+        # Reduce lift for more natural look
+        lift = base_lift * 0.8 if self.style_prefs.natural_appearance else base_lift
 
         return float(np.clip(lift, 0.0, 1.0))
 

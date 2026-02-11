@@ -9,11 +9,11 @@ single file and batch conversions, integrating all components:
 - BatchProcessor for parallel batch processing
 """
 
+from __future__ import annotations
+
 import json
-import logging
-import time
-from collections.abc import Callable
-from pathlib import Path
+from time import perf_counter
+from typing import TYPE_CHECKING
 
 from heic_converter.analyzer import ImageAnalyzer
 from heic_converter.batch_processor import BatchProcessor
@@ -29,6 +29,11 @@ from heic_converter.models import (
     ConversionStatus,
 )
 from heic_converter.optimizer import OptimizationParamGenerator
+
+if TYPE_CHECKING:
+    import logging
+    from collections.abc import Callable
+    from pathlib import Path
 
 
 class ConversionOrchestrator:
@@ -91,7 +96,7 @@ class ConversionOrchestrator:
         Returns:
             ConversionResult with conversion status and details
         """
-        start_time = time.time()
+        start_time = perf_counter()
 
         try:
             self.logger.info(f"Starting conversion of {input_path.name}")
@@ -107,7 +112,7 @@ class ConversionOrchestrator:
                     output_path=None,
                     status=ConversionStatus.FAILED,
                     error_message=validation.error_message,
-                    processing_time=time.time() - start_time,
+                    processing_time=perf_counter() - start_time,
                 )
 
             # 2. Generate output path
@@ -121,7 +126,7 @@ class ConversionOrchestrator:
                     output_path=output_path,
                     status=ConversionStatus.SKIPPED,
                     error_message="Output file already exists (no-overwrite enabled)",
-                    processing_time=time.time() - start_time,
+                    processing_time=perf_counter() - start_time,
                 )
 
             # Validate output path
@@ -137,7 +142,7 @@ class ConversionOrchestrator:
                     output_path=None,
                     status=ConversionStatus.FAILED,
                     error_message=output_validation.error_message,
-                    processing_time=time.time() - start_time,
+                    processing_time=perf_counter() - start_time,
                 )
 
             # 4. Decode HEIC and extract EXIF
@@ -208,7 +213,7 @@ class ConversionOrchestrator:
                 {
                     "input_path": input_path,
                     "operation": "single_conversion",
-                    "processing_time": time.time() - start_time,
+                    "processing_time": perf_counter() - start_time,
                 },
             )
 

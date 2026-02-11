@@ -9,9 +9,14 @@ This module provides centralized logging configuration with:
 - Structured log formatting
 """
 
+from __future__ import annotations
+
 import logging
 import sys
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class PlatformIndependentFormatter(logging.Formatter):

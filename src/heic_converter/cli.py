@@ -48,7 +48,7 @@ def display_progress_bar(files: list[Path], orchestrator: ConversionOrchestrator
         task = progress.add_task("[cyan]Converting HEIC files...", total=len(files))
 
         # Create progress callback
-        def progress_callback(current: int, total: int, filename: str) -> None:
+        def progress_callback(current: int, _total: int, filename: str) -> None:
             progress.update(
                 task,
                 completed=current,

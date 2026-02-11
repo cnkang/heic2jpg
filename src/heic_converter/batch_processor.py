@@ -1,21 +1,25 @@
 """Batch processor with parallel execution for HEIC to JPG converter."""
 
+from __future__ import annotations
+
 import logging
 import os
-import time
-from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from pathlib import Path
+from time import perf_counter
+from typing import TYPE_CHECKING
 
 from heic_converter.analyzer import ImageAnalyzer
-from heic_converter.config import Config
 from heic_converter.converter import ImageConverter
 from heic_converter.errors import ErrorHandler
 from heic_converter.exif import EXIFExtractor
 from heic_converter.filesystem import FileSystemHandler
 from heic_converter.logging_config import get_logger
-from heic_converter.models import BatchResults, ConversionResult, ConversionStatus
+from heic_converter.models import BatchResults, Config, ConversionResult, ConversionStatus
 from heic_converter.optimizer import OptimizationParamGenerator
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 
 class BatchProcessor:
@@ -79,7 +83,7 @@ class BatchProcessor:
                 total_time=0.0,
             )
 
-        start_time = time.time()
+        start_time = perf_counter()
         results: list[ConversionResult] = []
 
         self.logger.info(f"Starting batch processing of {len(files)} files")
@@ -97,10 +101,8 @@ class BatchProcessor:
             }
 
             # Collect results as they complete
-            completed_count = 0
-            for future in as_completed(future_to_file):
+            for completed_count, future in enumerate(as_completed(future_to_file), start=1):
                 file_path = future_to_file[future]
-                completed_count += 1
 
                 try:
                     result = future.result()
@@ -141,7 +143,7 @@ class BatchProcessor:
                         self.progress_callback(completed_count, len(files), file_path.name)
 
         # Aggregate results
-        total_time = time.time() - start_time
+        total_time = perf_counter() - start_time
         successful = sum(1 for r in results if r.status == ConversionStatus.SUCCESS)
         failed = sum(1 for r in results if r.status == ConversionStatus.FAILED)
         skipped = sum(1 for r in results if r.status == ConversionStatus.SKIPPED)
@@ -223,8 +225,7 @@ def _process_single_file_worker(file_path: Path, config: Config) -> ConversionRe
 
         # Decode HEIC and extract EXIF
         image_array, exif_dict = converter._decode_heic(file_path)
-        # Extract EXIF metadata from the file directly
-        exif_metadata = exif_extractor.extract_from_path(file_path)
+        exif_metadata = exif_extractor.extract_from_dict(exif_dict)
 
         # Analyze image
         metrics = analyzer.analyze(image_array, exif_metadata)

@@ -90,7 +90,7 @@ class EXIFExtractor:
             # If any error occurs during extraction, return empty metadata
             return EXIFMetadata()
 
-    def extract_from_dict(self, exif_dict: dict) -> EXIFMetadata:
+    def extract_from_dict(self, exif_dict: dict[str, Any]) -> EXIFMetadata:
         """Extract EXIF metadata from a piexif dictionary.
 
         Args:

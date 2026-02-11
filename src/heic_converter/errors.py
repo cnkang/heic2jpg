@@ -1,5 +1,6 @@
 """Error definitions for the HEIC to JPG converter."""
 
+import contextlib
 import logging
 import traceback
 from enum import Enum
@@ -150,7 +151,12 @@ class ErrorHandler:
         """
         # Get the input filename for context
         input_path = context.get("input_path")
-        filename = Path(input_path).name if input_path else "unknown file"
+        filename = "unknown file"
+        if input_path:
+            with contextlib.suppress(Exception):
+                filename = Path(str(input_path)).name
+            if filename == "unknown file":
+                filename = str(input_path)
 
         # Base error message from exception
         base_message = str(error)

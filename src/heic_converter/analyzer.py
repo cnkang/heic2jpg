@@ -107,10 +107,7 @@ class ImageAnalyzer:
 
         # Target is middle gray (0.5)
         # Convert to EV scale: each stop is a doubling/halving
-        if mean_luminance > 0:
-            exposure_ev = np.log2(mean_luminance / 0.5)
-        else:
-            exposure_ev = -2.0
+        exposure_ev = np.log2(mean_luminance / 0.5) if mean_luminance > 0 else -2.0
 
         # Apply EXIF exposure compensation if available
         if exif and exif.exposure_compensation is not None:
@@ -375,7 +372,4 @@ class ImageAnalyzer:
 
         # Low-light if dark AND (high ISO OR slow shutter)
         # Or if very dark regardless of EXIF
-        if mean_luminance < 0.2 or is_dark and (high_iso or slow_shutter):  # Very dark
-            return True
-
-        return False
+        return bool(mean_luminance < 0.2 or is_dark and (high_iso or slow_shutter))
