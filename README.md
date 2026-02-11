@@ -18,19 +18,45 @@ A Python application that converts iPhone HEIC photos to high-quality JPG format
 
 ## Installation
 
+### Prerequisites
+
+1. **Python 3.14+**: Ensure Python 3.14 or higher is installed
+   ```bash
+   python --version  # Should show 3.14.x or higher
+   ```
+
+2. **uv package manager**: If you don't have uv installed
+   ```bash
+   pip install uv
+   ```
+
+### Installation Steps
+
 ```bash
-# Install uv if you haven't already
-pip install uv
+# 1. Clone the repository
+git clone https://github.com/cnkang/heic2jpg.git
+cd heic2jpg
 
-# Clone the repository
-git clone https://github.com/yourusername/heic-to-jpg-converter.git
-cd heic-to-jpg-converter
-
-# Install dependencies
+# 2. Install dependencies
 uv sync
 
-# Install in development mode
+# 3. Install the command-line tool (in development mode)
 uv pip install -e .
+
+# 4. Verify installation
+heic-converter --version
+```
+
+After installation, the `heic-converter` command will be available from any directory.
+
+### Quick Test
+
+```bash
+# Test conversion (assuming you have a test.heic file)
+heic-converter test.heic
+
+# If you don't have HEIC files, run tests to ensure everything works
+uv run pytest tests/unit -v
 ```
 
 ## Usage

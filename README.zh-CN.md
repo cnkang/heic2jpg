@@ -18,19 +18,45 @@
 
 ## 安装
 
+### 前置要求
+
+1. **Python 3.14+**：确保已安装 Python 3.14 或更高版本
+   ```bash
+   python --version  # 应该显示 3.14.x 或更高
+   ```
+
+2. **uv 包管理器**：如果还没有安装 uv
+   ```bash
+   pip install uv
+   ```
+
+### 安装步骤
+
 ```bash
-# 如果还没有安装 uv，先安装它
-pip install uv
+# 1. 克隆仓库
+git clone https://github.com/cnkang/heic2jpg.git
+cd heic2jpg
 
-# 克隆仓库
-git clone https://github.com/yourusername/heic-to-jpg-converter.git
-cd heic-to-jpg-converter
-
-# 安装依赖
+# 2. 安装依赖
 uv sync
 
-# 以开发模式安装
+# 3. 安装命令行工具（以开发模式）
 uv pip install -e .
+
+# 4. 验证安装
+heic-converter --version
+```
+
+安装完成后，`heic-converter` 命令就可以在任何目录使用了。
+
+### 快速测试
+
+```bash
+# 测试转换（假设你有一个 test.heic 文件）
+heic-converter test.heic
+
+# 如果没有 HEIC 文件，可以先运行测试确保一切正常
+uv run pytest tests/unit -v
 ```
 
 ## 使用方法
