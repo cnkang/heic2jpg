@@ -1,6 +1,20 @@
 # HEIC 转 JPG 转换器
 
+[![测试](https://github.com/cnkang/heic2jpg/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/cnkang/heic2jpg/actions/workflows/test.yml)
+[![代码检查](https://github.com/cnkang/heic2jpg/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/cnkang/heic2jpg/actions/workflows/lint.yml)
+[![安全扫描](https://github.com/cnkang/heic2jpg/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/cnkang/heic2jpg/actions/workflows/security.yml)
+[![Snyk 安全](https://snyk.io/test/github/cnkang/heic2jpg/badge.svg)](https://app.snyk.io/org/cnkang/project/2f2047b4-1dda-4279-829d-288e99acd28a)
+[![覆盖率](https://codecov.io/gh/cnkang/heic2jpg/graph/badge.svg?branch=main)](https://codecov.io/gh/cnkang/heic2jpg)
+[![Python 版本](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcnkang%2Fheic2jpg%2Fmain%2Fpyproject.toml&query=%24.project.requires-python&label=python&logo=python)](https://github.com/cnkang/heic2jpg/blob/main/pyproject.toml)
+[![许可证: MIT](https://img.shields.io/github/license/cnkang/heic2jpg)](LICENSE)
+
 一个将 iPhone HEIC 照片转换为高质量 JPG 格式的 Python 应用程序，专为银盐（模拟）打印优化。
+
+## 项目状态
+
+- 🚧 **Alpha 阶段 / 持续开发中**
+- ✅ **CI 检查**：通过 GitHub Actions 自动执行测试、代码检查与安全扫描
+- 📊 **覆盖率**：通过 Codecov 自动跟踪
 
 ## 功能特性
 
@@ -221,7 +235,3 @@ heic-converter samples/*.HEIC samples/*.heic --output-dir /tmp/sample-output
 ## 许可证
 
 MIT 许可证 - 详见 LICENSE 文件
-
-## 状态
-
-🚧 **开发中** - 该项目目前正在积极开发中。

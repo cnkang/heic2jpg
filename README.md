@@ -1,6 +1,20 @@
 # HEIC to JPG Converter
 
+[![Tests](https://github.com/cnkang/heic2jpg/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/cnkang/heic2jpg/actions/workflows/test.yml)
+[![Linting](https://github.com/cnkang/heic2jpg/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/cnkang/heic2jpg/actions/workflows/lint.yml)
+[![Security](https://github.com/cnkang/heic2jpg/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/cnkang/heic2jpg/actions/workflows/security.yml)
+[![Snyk Security](https://snyk.io/test/github/cnkang/heic2jpg/badge.svg)](https://app.snyk.io/org/cnkang/project/2f2047b4-1dda-4279-829d-288e99acd28a)
+[![codecov](https://codecov.io/gh/cnkang/heic2jpg/graph/badge.svg?branch=main)](https://codecov.io/gh/cnkang/heic2jpg)
+[![Python](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcnkang%2Fheic2jpg%2Fmain%2Fpyproject.toml&query=%24.project.requires-python&label=python&logo=python)](https://github.com/cnkang/heic2jpg/blob/main/pyproject.toml)
+[![License: MIT](https://img.shields.io/github/license/cnkang/heic2jpg)](LICENSE)
+
 A Python application that converts iPhone HEIC photos to high-quality JPG format optimized for silver halide (analog) printing.
+
+## Status
+
+- 🚧 **Alpha / In Active Development**
+- ✅ **CI Checks**: tests, linting, and security scans run via GitHub Actions
+- 📊 **Coverage**: tracked automatically with Codecov
 
 ## Features
 
