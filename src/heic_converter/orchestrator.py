@@ -145,6 +145,9 @@ class ConversionOrchestrator:
                     processing_time=perf_counter() - start_time,
                 )
 
+            # Ensure output directory exists before encoding
+            self.filesystem.ensure_directory(output_path.parent)
+
             # 4. Decode HEIC and extract EXIF
             self.logger.debug(f"Decoding HEIC file: {input_path.name}")
             image_array, exif_dict = self.converter._decode_heic(input_path)
@@ -186,7 +189,13 @@ class ConversionOrchestrator:
 
             # 7. Convert with optimizations
             self.logger.debug(f"Converting image: {input_path.name}")
-            result = self.converter.convert(input_path, output_path, optimization_params)
+            result = self.converter.convert(
+                input_path,
+                output_path,
+                optimization_params,
+                decoded_image=image_array,
+                decoded_exif=exif_dict,
+            )
 
             # Add metrics to result
             result.metrics = metrics

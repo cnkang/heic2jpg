@@ -432,3 +432,36 @@ class TestImageConverter:
         assert result.status == ConversionStatus.FAILED
         assert result.error_message is not None
         assert "failed" in result.error_message.lower()
+
+    def test_convert_uses_predecoded_image_without_redecoding(self, tmp_path):
+        """Test convert() can reuse pre-decoded data and skip decode step."""
+        output_path = tmp_path / "output.jpg"
+        input_path = tmp_path / "input.heic"
+        predecoded_image = np.random.randint(0, 256, size=(64, 64, 3), dtype=np.uint8)
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        params = OptimizationParams(
+            exposure_adjustment=0.0,
+            contrast_adjustment=1.0,
+            shadow_lift=0.0,
+            highlight_recovery=0.0,
+            saturation_adjustment=1.0,
+            sharpness_amount=0.0,
+            noise_reduction=0.0,
+            skin_tone_protection=False,
+        )
+
+        with patch.object(converter, "_decode_heic") as mock_decode:
+            result = converter.convert(
+                input_path,
+                output_path,
+                params,
+                decoded_image=predecoded_image,
+                decoded_exif={},
+            )
+
+        assert result.status == ConversionStatus.SUCCESS
+        assert output_path.exists()
+        mock_decode.assert_not_called()

@@ -46,6 +46,8 @@ class ImageConverter:
         input_path: Path,
         output_path: Path,
         optimization_params: OptimizationParams,
+        decoded_image: NDArray[np.uint8] | None = None,
+        decoded_exif: ExifDict | None = None,
     ) -> ConversionResult:
         """Convert HEIC to JPG with optimizations.
 
@@ -53,6 +55,8 @@ class ImageConverter:
             input_path: Path to input HEIC file
             output_path: Path to output JPG file
             optimization_params: Optimization parameters to apply
+            decoded_image: Optional pre-decoded RGB image array to avoid re-decoding
+            decoded_exif: Optional EXIF dictionary associated with decoded_image
 
         Returns:
             ConversionResult with conversion status and details
@@ -64,8 +68,13 @@ class ImageConverter:
         start_time = perf_counter()
 
         try:
-            # Decode HEIC file
-            image_array, exif_dict = self._decode_heic(input_path)
+            if decoded_image is None:
+                # Decode HEIC file
+                image_array, exif_dict = self._decode_heic(input_path)
+            else:
+                # Reuse pre-decoded image/exif when already available in the caller.
+                image_array = decoded_image
+                exif_dict = decoded_exif or {}
 
             # Apply optimizations
             optimized_image = self._apply_optimizations(image_array, optimization_params)

@@ -114,7 +114,7 @@ class TestBatchProcessor:
         files = [Path(f"test{i}.heic") for i in range(5)]
 
         # Mock worker to return different statuses
-        def mock_worker(file_path, config):
+        def mock_worker(file_path, config, output_path=None):
             if "test0" in str(file_path) or "test1" in str(file_path):
                 return ConversionResult(
                     input_path=file_path,
@@ -167,7 +167,7 @@ class TestBatchProcessor:
         files = [Path(f"test{i}.heic") for i in range(3)]
 
         # Mock worker to fail on second file
-        def mock_worker(file_path, config):
+        def mock_worker(file_path, config, output_path=None):
             if "test1" in str(file_path):
                 raise Exception("Test error")
             return ConversionResult(
@@ -200,6 +200,41 @@ class TestBatchProcessor:
         failed_results = [r for r in results.results if r.status == ConversionStatus.FAILED]
         assert len(failed_results) == 1
         assert failed_results[0].error_message is not None
+
+    def test_process_batch_avoids_output_name_collisions(self):
+        """Test that output names are made unique when batch inputs collide."""
+        from concurrent.futures import ThreadPoolExecutor
+
+        output_dir = Path("/tmp/output")
+        config = Config(output_dir=output_dir)
+        processor = BatchProcessor(config)
+
+        files = [Path("/a/IMG_0001.heic"), Path("/b/IMG_0001.heic")]
+        output_names: list[str] = []
+
+        def mock_worker(file_path, config, output_path=None):
+            assert output_path is not None
+            output_names.append(output_path.name)
+            return ConversionResult(
+                input_path=file_path,
+                output_path=output_path,
+                status=ConversionStatus.SUCCESS,
+            )
+
+        with (
+            patch("heic_converter.batch_processor.ProcessPoolExecutor", ThreadPoolExecutor),
+            patch(
+                "heic_converter.batch_processor._process_single_file_worker",
+                side_effect=mock_worker,
+            ),
+        ):
+            results = processor.process_batch(files)
+
+        assert results.successful == 2
+        assert len(output_names) == 2
+        assert len(set(output_names)) == 2
+        assert "IMG_0001.jpg" in output_names
+        assert any(name.startswith("IMG_0001_") and name.endswith(".jpg") for name in output_names)
 
 
 class TestProcessSingleFileWorker:

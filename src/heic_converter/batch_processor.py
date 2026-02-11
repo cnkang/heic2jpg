@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from hashlib import blake2s
 from time import perf_counter
 from typing import TYPE_CHECKING
 
@@ -85,8 +86,9 @@ class BatchProcessor:
 
         start_time = perf_counter()
         results: list[ConversionResult] = []
+        planned_jobs = self._plan_output_paths(files)
 
-        self.logger.info(f"Starting batch processing of {len(files)} files")
+        self.logger.info(f"Starting batch processing of {len(planned_jobs)} files")
 
         # Use ProcessPoolExecutor for true parallelism
         with ProcessPoolExecutor(max_workers=self.worker_count) as executor:
@@ -96,8 +98,9 @@ class BatchProcessor:
                     _process_single_file_worker,
                     file_path,
                     self.config,
+                    output_path,
                 ): file_path
-                for file_path in files
+                for file_path, output_path in planned_jobs
             }
 
             # Collect results as they complete
@@ -164,8 +167,50 @@ class BatchProcessor:
 
         return batch_results
 
+    def _plan_output_paths(self, files: list[Path]) -> list[tuple[Path, Path]]:
+        """Plan deterministic output paths and prevent in-batch filename collisions."""
+        filesystem = FileSystemHandler()
+        used_paths: set[Path] = set()
+        planned_jobs: list[tuple[Path, Path]] = []
 
-def _process_single_file_worker(file_path: Path, config: Config) -> ConversionResult:
+        for file_path in files:
+            base_output_path = filesystem.get_output_path(file_path, self.config.output_dir)
+            output_path = base_output_path
+            duplicate_index = 0
+
+            while output_path in used_paths:
+                output_path = self._with_collision_suffix(base_output_path, file_path, duplicate_index)
+                duplicate_index += 1
+
+            if output_path != base_output_path:
+                self.logger.warning(
+                    f"Output path collision detected for {file_path.name}; "
+                    f"using {output_path.name} instead of {base_output_path.name}"
+                )
+
+            used_paths.add(output_path)
+            planned_jobs.append((file_path, output_path))
+
+        return planned_jobs
+
+    @staticmethod
+    def _with_collision_suffix(base_output_path: Path, file_path: Path, index: int) -> Path:
+        """Build a collision-safe output filename using a deterministic source hash."""
+        try:
+            source_key = str(file_path.resolve(strict=False))
+        except (OSError, RuntimeError):
+            source_key = str(file_path)
+        source_hash = blake2s(source_key.encode("utf-8"), digest_size=4).hexdigest()
+        ordinal_suffix = "" if index == 0 else f"_{index}"
+        unique_name = f"{base_output_path.stem}_{source_hash}{ordinal_suffix}{base_output_path.suffix}"
+        return base_output_path.with_name(unique_name)
+
+
+def _process_single_file_worker(
+    file_path: Path,
+    config: Config,
+    output_path: Path | None = None,
+) -> ConversionResult:
     """Process a single file (called by worker processes).
 
     This function is designed to be called by worker processes in the
@@ -175,6 +220,7 @@ def _process_single_file_worker(file_path: Path, config: Config) -> ConversionRe
     Args:
         file_path: Path to the input file
         config: Configuration for conversion
+        output_path: Optional pre-planned output path to avoid in-batch collisions
 
     Returns:
         ConversionResult for the file
@@ -202,19 +248,19 @@ def _process_single_file_worker(file_path: Path, config: Config) -> ConversionRe
             )
 
         # Generate output path
-        output_path = filesystem.get_output_path(file_path, config.output_dir)
+        target_output_path = output_path or filesystem.get_output_path(file_path, config.output_dir)
 
         # Check if output file exists and handle no-overwrite flag
-        if output_path.exists() and config.no_overwrite:
+        if target_output_path.exists() and config.no_overwrite:
             return ConversionResult(
                 input_path=file_path,
-                output_path=output_path,
+                output_path=target_output_path,
                 status=ConversionStatus.SKIPPED,
                 error_message="Output file already exists (no-overwrite enabled)",
             )
 
         # Validate output path
-        output_validation = filesystem.validate_output_path(output_path, config.no_overwrite)
+        output_validation = filesystem.validate_output_path(target_output_path, config.no_overwrite)
         if not output_validation.valid:
             return ConversionResult(
                 input_path=file_path,
@@ -222,6 +268,9 @@ def _process_single_file_worker(file_path: Path, config: Config) -> ConversionRe
                 status=ConversionStatus.FAILED,
                 error_message=output_validation.error_message,
             )
+
+        # Ensure output directory exists before encoding
+        filesystem.ensure_directory(target_output_path.parent)
 
         # Decode HEIC and extract EXIF
         image_array, exif_dict = converter._decode_heic(file_path)
@@ -234,7 +283,13 @@ def _process_single_file_worker(file_path: Path, config: Config) -> ConversionRe
         optimization_params = optimizer.generate(metrics)
 
         # Convert with optimizations
-        result = converter.convert(file_path, output_path, optimization_params)
+        result = converter.convert(
+            file_path,
+            target_output_path,
+            optimization_params,
+            decoded_image=image_array,
+            decoded_exif=exif_dict,
+        )
 
         # Add metrics to result
         result.metrics = metrics
