@@ -120,6 +120,12 @@ class TestSetupLogging:
 
             # Test that logging to file works
             logger.info("Test message")
+
+            # Close file handlers to release file on Windows
+            for handler in logger.handlers:
+                if isinstance(handler, logging.FileHandler):
+                    handler.close()
+
             assert log_file.exists()
             content = log_file.read_text(encoding="utf-8")
             assert "Test message" in content
@@ -131,6 +137,12 @@ class TestSetupLogging:
             logger = setup_logging(log_file=log_file)
 
             logger.info("Test message")
+
+            # Close file handlers to release file on Windows
+            for handler in logger.handlers:
+                if isinstance(handler, logging.FileHandler):
+                    handler.close()
+
             assert log_file.exists()
             assert log_file.parent.exists()
 
