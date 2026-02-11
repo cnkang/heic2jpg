@@ -65,3 +65,7 @@ dmypy.json
 
 # Ruff
 .ruff_cache/
+
+# Local-only sample assets (never commit to GitHub)
+/samples/
+/samples/**
