@@ -35,27 +35,101 @@ uv pip install -e .
 
 ## Usage
 
+### Single File Conversion
+
 ```bash
-# Convert a single file
-heic-converter input.heic
+# Convert a single file (output to same directory)
+heic-converter photo.heic
 
 # Convert with custom quality
-heic-converter input.heic --quality 95
+heic-converter photo.heic --quality 95
 
-# Batch convert directory
+# Convert to specific directory
+heic-converter photo.heic --output-dir ./converted
+```
+
+### Batch Convert All HEIC Files in a Directory
+
+```bash
+# Method 1: Use wildcards (recommended)
+heic-converter *.heic
+
+# Method 2: Use wildcards with output directory
 heic-converter *.heic --output-dir ./converted
 
-# Batch convert with no overwrite
+# Method 3: Explicitly specify multiple files
+heic-converter photo1.heic photo2.heic photo3.heic
+
+# Method 4: Batch convert without overwriting existing files
 heic-converter *.heic --no-overwrite
 
-# Verbose logging
-heic-converter input.heic --verbose
+# Method 5: Batch convert with verbose logging
+heic-converter *.heic --verbose
+```
+
+### Advanced Usage
+
+```bash
+# Batch convert with custom quality and output directory
+heic-converter *.heic --quality 95 --output-dir ./converted
+
+# Batch convert without overwriting, with verbose logging
+heic-converter *.heic --no-overwrite --verbose
 
 # Show help
 heic-converter --help
 
 # Show version
 heic-converter --version
+```
+
+### Usage Examples
+
+Suppose you have a directory with multiple iPhone photos:
+
+```bash
+# Current directory structure
+photos/
+  ├── IMG_0001.heic
+  ├── IMG_0002.heic
+  ├── IMG_0003.heic
+  └── IMG_0004.heic
+
+# Navigate to photos directory
+cd photos
+
+# Batch convert all HEIC files to current directory
+heic-converter *.heic
+
+# Directory structure after conversion
+photos/
+  ├── IMG_0001.heic
+  ├── IMG_0001.jpg    ← newly created
+  ├── IMG_0002.heic
+  ├── IMG_0002.jpg    ← newly created
+  ├── IMG_0003.heic
+  ├── IMG_0003.jpg    ← newly created
+  ├── IMG_0004.heic
+  └── IMG_0004.jpg    ← newly created
+```
+
+Or output to a separate directory:
+
+```bash
+# Batch convert and output to converted directory
+heic-converter *.heic --output-dir ./converted
+
+# Directory structure after conversion
+photos/
+  ├── IMG_0001.heic
+  ├── IMG_0002.heic
+  ├── IMG_0003.heic
+  ├── IMG_0004.heic
+  └── converted/
+      ├── IMG_0001.jpg
+      ├── IMG_0002.jpg
+      ├── IMG_0003.jpg
+      └── IMG_0004.jpg
 ```
 
 ## Development

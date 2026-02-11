@@ -35,27 +35,101 @@ uv pip install -e .
 
 ## 使用方法
 
+### 单文件转换
+
 ```bash
-# 转换单个文件
-heic-converter input.heic
+# 转换单个文件（输出到同一目录）
+heic-converter photo.heic
 
 # 使用自定义质量转换
-heic-converter input.heic --quality 95
+heic-converter photo.heic --quality 95
 
-# 批量转换目录
+# 转换到指定目录
+heic-converter photo.heic --output-dir ./converted
+```
+
+### 批量转换同一目录下的所有 HEIC 文件
+
+```bash
+# 方法 1: 使用通配符（推荐）
+heic-converter *.heic
+
+# 方法 2: 使用通配符并指定输出目录
 heic-converter *.heic --output-dir ./converted
 
-# 批量转换且不覆盖现有文件
+# 方法 3: 明确指定多个文件
+heic-converter photo1.heic photo2.heic photo3.heic
+
+# 方法 4: 批量转换且不覆盖已存在的文件
 heic-converter *.heic --no-overwrite
 
-# 详细日志输出
-heic-converter input.heic --verbose
+# 方法 5: 批量转换并显示详细日志
+heic-converter *.heic --verbose
+```
 
-# 显示帮助
+### 高级用法
+
+```bash
+# 批量转换，自定义质量，输出到指定目录
+heic-converter *.heic --quality 95 --output-dir ./converted
+
+# 批量转换，不覆盖现有文件，显示详细日志
+heic-converter *.heic --no-overwrite --verbose
+
+# 显示帮助信息
 heic-converter --help
 
-# 显示版本
+# 显示版本信息
 heic-converter --version
+```
+
+### 使用示例
+
+假设你有一个包含多张 iPhone 照片的目录：
+
+```bash
+# 当前目录结构
+photos/
+  ├── IMG_0001.heic
+  ├── IMG_0002.heic
+  ├── IMG_0003.heic
+  └── IMG_0004.heic
+
+# 进入照片目录
+cd photos
+
+# 批量转换所有 HEIC 文件到当前目录
+heic-converter *.heic
+
+# 转换后的目录结构
+photos/
+  ├── IMG_0001.heic
+  ├── IMG_0001.jpg    ← 新生成
+  ├── IMG_0002.heic
+  ├── IMG_0002.jpg    ← 新生成
+  ├── IMG_0003.heic
+  ├── IMG_0003.jpg    ← 新生成
+  ├── IMG_0004.heic
+  └── IMG_0004.jpg    ← 新生成
+```
+
+或者输出到单独的目录：
+
+```bash
+# 批量转换并输出到 converted 目录
+heic-converter *.heic --output-dir ./converted
+
+# 转换后的目录结构
+photos/
+  ├── IMG_0001.heic
+  ├── IMG_0002.heic
+  ├── IMG_0003.heic
+  ├── IMG_0004.heic
+  └── converted/
+      ├── IMG_0001.jpg
+      ├── IMG_0002.jpg
+      ├── IMG_0003.jpg
+      └── IMG_0004.jpg
 ```
 
 ## 开发
