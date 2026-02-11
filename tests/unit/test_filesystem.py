@@ -116,6 +116,12 @@ class TestValidateInputFile:
 
     def test_unreadable_file(self, fs_handler, temp_dir):
         """Test validation fails for unreadable file."""
+        import sys
+
+        # Skip on Windows - chmod doesn't work the same way
+        if sys.platform == "win32":
+            pytest.skip("Permission tests not reliable on Windows")
+
         test_file = temp_dir / "unreadable.heic"
         test_file.write_bytes(b"fake content")
 
@@ -175,6 +181,12 @@ class TestValidateOutputPath:
 
     def test_output_path_unwritable_parent(self, fs_handler, temp_dir):
         """Test validation fails for path with unwritable parent directory."""
+        import sys
+
+        # Skip on Windows - chmod doesn't work the same way
+        if sys.platform == "win32":
+            pytest.skip("Permission tests not reliable on Windows")
+
         subdir = temp_dir / "subdir"
         subdir.mkdir()
         output_file = subdir / "output.jpg"
