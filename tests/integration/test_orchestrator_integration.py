@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
+import pytest
 from PIL import Image
 
 from heic_converter.config import create_config
@@ -340,6 +341,14 @@ class TestOrchestratorErrorHandling:
 
         Validates: Requirements 16.1, 16.2
         """
+        import os
+        import stat
+        import sys
+
+        # Skip on Windows - chmod doesn't restrict write access the same way
+        if sys.platform == "win32":
+            pytest.skip("Permission tests not reliable on Windows")
+
         # Create input file
         input_file = tmp_path / "test.heic"
         test_image = Image.new("RGB", (200, 200), color=(100, 100, 100))
@@ -350,10 +359,6 @@ class TestOrchestratorErrorHandling:
         # Try to write to a read-only directory (simulate permission error)
         output_dir = tmp_path / "readonly"
         output_dir.mkdir()
-
-        # Make directory read-only (Unix-like systems)
-        import os
-        import stat
 
         try:
             os.chmod(output_dir, stat.S_IRUSR | stat.S_IXUSR)
