@@ -2,7 +2,8 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -10,7 +11,7 @@ from PIL import Image
 
 from heic2jpg.analyzer import ImageAnalyzer
 from heic2jpg.converter import ImageConverter
-from heic2jpg.errors import InvalidFileError
+from heic2jpg.errors import InvalidFileError, ProcessingError
 from heic2jpg.models import Config, ConversionStatus, OptimizationParams
 
 
@@ -115,6 +116,22 @@ class TestImageConverter:
         assert decoded_image.shape == (16, 16, 3)
         assert exif_dict == expected_exif
         assert icc_profile is None
+
+    def test_decode_heic_preserves_xmp_in_internal_metadata_key(self):
+        """Test decode stores XMP payload in internal metadata key."""
+        test_image = np.random.randint(0, 256, size=(16, 16, 3), dtype=np.uint8)
+        pil_image = Image.fromarray(test_image, mode="RGB")
+        xmp_payload = b"<x:xmpmeta/>"
+        pil_image.info["xmp"] = xmp_payload
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        with patch("heic2jpg.converter.Image.open") as mock_open:
+            mock_open.return_value.__enter__.return_value = pil_image
+            _decoded_image, exif_dict, _icc_profile = converter._decode_heic(Path("dummy.heic"))
+
+        assert exif_dict[converter.INTERNAL_XMP_KEY] == xmp_payload
 
     def test_encode_jpg(self):
         """Test encoding image as JPG."""
@@ -316,6 +333,56 @@ class TestImageConverter:
         auto_recovery = converter._calculate_auto_highlight_recovery(image, params)
         assert auto_recovery == 0.0
 
+    def test_auto_highlight_recovery_returns_zero_when_clipping_is_below_trigger(self):
+        """Test adaptive highlight recovery stays off when clipping is below trigger."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        image = np.full((100, 100, 3), 0.5, dtype=np.float32)
+        params = OptimizationParams(
+            exposure_adjustment=0.3,
+            contrast_adjustment=1.0,
+            shadow_lift=0.0,
+            highlight_recovery=0.0,
+            saturation_adjustment=1.0,
+            sharpness_amount=0.0,
+            noise_reduction=0.0,
+            skin_tone_protection=False,
+        )
+
+        auto_recovery = converter._calculate_auto_highlight_recovery(image, params)
+        assert auto_recovery == 0.0
+
+    def test_apply_optimizations_resets_face_strength_when_auto_trigger_is_too_low(self):
+        """Test auto face strength below trigger gets reset to zero."""
+        image = np.full((120, 120, 3), 100, dtype=np.uint8)
+        params = OptimizationParams(
+            exposure_adjustment=0.0,
+            contrast_adjustment=1.0,
+            shadow_lift=0.0,
+            highlight_recovery=0.0,
+            saturation_adjustment=1.0,
+            sharpness_amount=0.0,
+            noise_reduction=0.0,
+            skin_tone_protection=False,
+            face_relight_strength=0.0,
+        )
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        with (
+            patch.object(
+                converter, "_extract_embedded_face_regions", return_value=[(20, 20, 40, 40)]
+            ),
+            patch.object(converter, "_estimate_auto_face_relight_strength", return_value=0.01),
+            patch.object(converter, "_relight_faces") as mock_relight,
+        ):
+            converter._apply_optimizations(image, params, exif_dict={})
+
+        assert params.face_relight_strength == 0.0
+        mock_relight.assert_not_called()
+
     def test_extract_face_regions_from_xmp(self):
         """Test extracting normalized face regions from XMP payload."""
         xmp_payload = """
@@ -348,6 +415,93 @@ class TestImageConverter:
         assert y == 280
         assert w == 200
         assert h == 240
+
+    def test_extract_face_regions_from_xmp_handles_bytes_empty_and_invalid_payloads(self):
+        """Test XMP extraction handles bytes/empty/invalid cases safely."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        assert converter._extract_face_regions_from_xmp(b"", width=100, height=100) == []
+        assert converter._extract_face_regions_from_xmp("<x:xmpmeta>", width=100, height=100) == []
+
+    def test_extract_face_regions_from_xmp_deduplicates_regions(self):
+        """Test duplicate regions are deduplicated while preserving order."""
+        xmp_payload = """
+        <x:xmpmeta xmlns:x="adobe:ns:meta/">
+          <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+            <rdf:Description xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/">
+              <mwg-rs:Regions>
+                <rdf:Bag>
+                  <rdf:li xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#" stArea:x="0.5" stArea:y="0.5" stArea:w="0.2" stArea:h="0.3" />
+                  <rdf:li xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#" stArea:x="0.5" stArea:y="0.5" stArea:w="0.2" stArea:h="0.3" />
+                </rdf:Bag>
+              </mwg-rs:Regions>
+            </rdf:Description>
+          </rdf:RDF>
+        </x:xmpmeta>
+        """
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        regions = converter._extract_face_regions_from_xmp(xmp_payload, width=1000, height=800)
+        assert len(regions) == 1
+
+    def test_extract_face_regions_from_xmp_skips_entries_without_area_attributes(self):
+        """Test XMP entries without area attributes are ignored."""
+        xmp_payload = """
+        <x:xmpmeta xmlns:x="adobe:ns:meta/">
+          <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+            <rdf:Description xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/">
+              <mwg-rs:Regions>
+                <rdf:Bag>
+                  <rdf:li />
+                </rdf:Bag>
+              </mwg-rs:Regions>
+            </rdf:Description>
+          </rdf:RDF>
+        </x:xmpmeta>
+        """
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+        assert converter._extract_face_regions_from_xmp(xmp_payload, width=300, height=300) == []
+
+    def test_extract_embedded_face_regions_ignores_non_text_xmp(self):
+        """Test embedded face-region extraction ignores non-bytes/string XMP values."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+        assert (
+            converter._extract_embedded_face_regions({converter.INTERNAL_XMP_KEY: 123}, 100, 100)
+            == []
+        )
+
+    def test_parse_xmp_region_handles_missing_percent_and_invalid_values(self):
+        """Test XMP region parser handles multiple edge cases."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        assert converter._parse_xmp_region({"stArea:x": "0.5"}) is None
+
+        percent_region = converter._parse_xmp_region(
+            {
+                "stArea:x": "50",
+                "stArea:y": "50",
+                "stArea:w": "20",
+                "stArea:h": "30",
+            }
+        )
+        assert percent_region == (0.5, 0.5, 0.2, 0.3)
+
+        assert (
+            converter._parse_xmp_region(
+                {
+                    "stArea:x": "invalid",
+                    "stArea:y": "50",
+                    "stArea:w": "20",
+                    "stArea:h": "30",
+                }
+            )
+            is None
+        )
 
     def test_relight_faces_brightens_face_without_lifting_highlight_background(self):
         """Test local face relighting brightens face region and protects bright background."""
@@ -485,6 +639,83 @@ class TestImageConverter:
         assert converter.INTERNAL_XMP_KEY not in sanitized
         assert "custom" not in sanitized
 
+    def test_load_face_detector_returns_none_for_invalid_cv2_data_layout(self):
+        """Test face detector loader returns None when cv2 data layout is invalid."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        with patch("heic2jpg.converter.cv2.data", new=object(), create=True):
+            assert converter._load_face_detector() is None
+
+    def test_load_face_detector_returns_none_when_haarcascades_is_not_string(self):
+        """Test face detector loader returns None when haarcascade path is not a string."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        with patch(
+            "heic2jpg.converter.cv2.data", new=SimpleNamespace(haarcascades=123), create=True
+        ):
+            assert converter._load_face_detector() is None
+
+    def test_load_face_detector_returns_none_when_cascade_is_empty(self):
+        """Test face detector loader returns None when cascade classifier is empty."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+        empty_detector = Mock()
+        empty_detector.empty.return_value = True
+
+        with (
+            patch(
+                "heic2jpg.converter.cv2.data",
+                new=SimpleNamespace(haarcascades="/tmp/"),
+                create=True,
+            ),
+            patch("heic2jpg.converter.cv2.CascadeClassifier", return_value=empty_detector),
+        ):
+            assert converter._load_face_detector() is None
+
+    def test_load_face_detector_handles_exception(self):
+        """Test face detector loader gracefully handles unexpected exceptions."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        with (
+            patch(
+                "heic2jpg.converter.cv2.data",
+                new=SimpleNamespace(haarcascades="/tmp/"),
+                create=True,
+            ),
+            patch("heic2jpg.converter.cv2.CascadeClassifier", side_effect=RuntimeError("boom")),
+        ):
+            assert converter._load_face_detector() is None
+
+    def test_detect_faces_returns_empty_when_detector_is_missing(self):
+        """Test face detection returns empty list when detector is unavailable."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+        converter._face_detector = None
+
+        image = np.random.randint(0, 256, size=(80, 80, 3), dtype=np.uint8)
+        assert converter._detect_faces(image) == []
+
+    def test_detect_faces_scales_and_filters_invalid_boxes(self):
+        """Test face detection scales coordinates and filters invalid detections."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        detector = Mock()
+        detector.detectMultiScale.return_value = np.array(
+            [[10, 20, 30, 40], [1, 1, 0, 10]], dtype=np.int32
+        )
+        converter._face_detector = detector
+
+        image = np.random.randint(0, 256, size=(3000, 4000, 3), dtype=np.uint8)
+        regions = converter._detect_faces(image)
+
+        assert len(regions) == 1
+        assert regions[0][2] > 0
+        assert regions[0][3] > 0
+
     def test_adjust_saturation(self):
         """Test saturation adjustment."""
         # Create a colorful image with moderate saturation
@@ -534,6 +765,20 @@ class TestImageConverter:
 
         assert denoised_diff < noisy_diff
 
+    def test_adjust_saturation_with_skin_protection_uses_skin_branch(self):
+        """Test saturation adjustment uses skin-protection branch for skin-like hues."""
+        image = np.full((80, 80, 3), [0.86, 0.66, 0.55], dtype=np.float32)
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        protected = converter._adjust_saturation(image, 1.5, protect_skin_tones=True)
+        unprotected = converter._adjust_saturation(image, 1.5, protect_skin_tones=False)
+
+        protected_shift = float(np.mean(np.abs(protected - image)))
+        unprotected_shift = float(np.mean(np.abs(unprotected - image)))
+        assert protected_shift < unprotected_shift
+
     def test_sharpen(self):
         """Test sharpening."""
         # Create a blurry image (all same value)
@@ -547,6 +792,48 @@ class TestImageConverter:
 
         # For a uniform image, sharpening shouldn't change much
         assert np.allclose(sharpened, blurry_image, atol=0.1)
+
+    def test_relight_faces_handles_empty_or_invalid_regions_gracefully(self):
+        """Test relight handles empty/small/invalid regions without changing image."""
+        image = np.full((80, 80, 3), 0.4, dtype=np.float32)
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        unchanged_empty = converter._relight_faces(image, [], amount=0.3)
+        unchanged_small = converter._relight_faces(image, [(10, 10, 4, 4)], amount=0.3)
+        unchanged_invalid = converter._relight_faces(image, [(-100, -100, 20, 20)], amount=0.3)
+
+        assert np.allclose(unchanged_empty, image)
+        assert np.allclose(unchanged_small, image)
+        assert np.allclose(unchanged_invalid, image)
+
+    def test_estimate_auto_face_relight_strength_branch_coverage(self):
+        """Test multiple branch outcomes of auto face relight estimation."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        image = np.full((40, 40, 3), 0.8, dtype=np.float32)
+        assert converter._estimate_auto_face_relight_strength(image, []) == 0.0
+        assert (
+            converter._estimate_auto_face_relight_strength(image, [(0, 0, 0, 20), (0, 0, 20, 0)])
+            == 0.0
+        )
+
+        high_face = np.full((80, 80, 3), 0.85, dtype=np.float32)
+        assert converter._estimate_auto_face_relight_strength(high_face, [(10, 10, 20, 20)]) == 0.0
+
+        low_bright_ref = np.full((80, 80, 3), 0.6, dtype=np.float32)
+        low_bright_ref[10:30, 10:30, :] = 0.4
+        assert (
+            converter._estimate_auto_face_relight_strength(low_bright_ref, [(10, 10, 20, 20)])
+            == 0.0
+        )
+
+        subtle_gap = np.full((100, 100, 3), 0.58, dtype=np.float32)
+        subtle_gap[:10, :, :] = 0.73
+        subtle_gap[30:70, 30:70, :] = 0.56
+        assert converter._estimate_auto_face_relight_strength(subtle_gap, [(30, 30, 40, 40)]) == 0.0
 
     def test_apply_optimizations_order(self):
         """Test that optimizations are applied in correct order."""
@@ -713,3 +1000,48 @@ class TestImageConverter:
         assert result.status == ConversionStatus.SUCCESS
         assert output_path.exists()
         mock_decode.assert_not_called()
+
+    def test_encode_jpg_includes_exif_when_dump_succeeds(self, tmp_path):
+        """Test encoded JPG receives EXIF bytes when dump succeeds."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+        image = np.random.randint(0, 256, size=(32, 32, 3), dtype=np.uint8)
+        output_path = tmp_path / "with-exif.jpg"
+
+        with (
+            patch("heic2jpg.converter.piexif.dump", return_value=b"exif-bytes"),
+            patch("PIL.Image.Image.save") as mock_save,
+        ):
+            converter._encode_jpg(image, output_path, 95, {"Exif": {}})
+
+        kwargs = mock_save.call_args.kwargs
+        assert kwargs["exif"] == b"exif-bytes"
+
+    def test_encode_jpg_continues_when_exif_dump_fails(self, tmp_path):
+        """Test JPG encoding continues without EXIF when dump fails."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+        image = np.random.randint(0, 256, size=(32, 32, 3), dtype=np.uint8)
+        output_path = tmp_path / "without-exif.jpg"
+
+        with (
+            patch("heic2jpg.converter.piexif.dump", side_effect=ValueError("bad exif")),
+            patch("PIL.Image.Image.save") as mock_save,
+        ):
+            converter._encode_jpg(image, output_path, 95, {"Exif": {}})
+
+        kwargs = mock_save.call_args.kwargs
+        assert "exif" not in kwargs
+
+    def test_encode_jpg_raises_processing_error_when_save_fails(self, tmp_path):
+        """Test encode raises ProcessingError when save operation fails."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+        image = np.random.randint(0, 256, size=(32, 32, 3), dtype=np.uint8)
+        output_path = tmp_path / "save-fail.jpg"
+
+        with (
+            patch("PIL.Image.Image.save", side_effect=OSError("disk error")),
+            pytest.raises(ProcessingError, match="Failed to encode JPG file"),
+        ):
+            converter._encode_jpg(image, output_path, 95, {})
