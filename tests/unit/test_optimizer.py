@@ -42,6 +42,7 @@ class TestOptimizationParamGenerator:
         assert 0.0 <= params.sharpness_amount <= 2.0
         assert 0.0 <= params.noise_reduction <= 1.0
         assert isinstance(params.skin_tone_protection, bool)
+        assert 0.0 <= params.face_relight_strength <= 1.0
 
     def test_exposure_adjustment_for_underexposed_image(self):
         """Test exposure adjustment for underexposed images."""
@@ -213,6 +214,52 @@ class TestOptimizationParamGenerator:
         params = generator.generate(metrics)
 
         assert params.highlight_recovery >= 0.1
+
+    def test_backlit_scene_enables_face_relighting(self):
+        """Test local face relighting is enabled for backlit portrait-like scenes."""
+        generator = OptimizationParamGenerator(StylePreferences())
+
+        metrics = ImageMetrics(
+            exposure_level=-0.5,
+            contrast_level=0.6,
+            shadow_clipping_percent=8.0,
+            highlight_clipping_percent=1.5,
+            saturation_level=1.0,
+            sharpness_score=0.5,
+            noise_level=0.3,
+            skin_tone_detected=True,
+            skin_tone_hue_range=(10.0, 35.0),
+            is_backlit=True,
+            is_low_light=False,
+            exif_data=None,
+        )
+
+        params = generator.generate(metrics)
+
+        assert params.face_relight_strength > 0.1
+
+    def test_non_backlit_scene_disables_face_relighting(self):
+        """Test local face relighting stays disabled outside backlit scenes."""
+        generator = OptimizationParamGenerator(StylePreferences())
+
+        metrics = ImageMetrics(
+            exposure_level=-0.5,
+            contrast_level=0.6,
+            shadow_clipping_percent=8.0,
+            highlight_clipping_percent=1.5,
+            saturation_level=1.0,
+            sharpness_score=0.5,
+            noise_level=0.3,
+            skin_tone_detected=True,
+            skin_tone_hue_range=(10.0, 35.0),
+            is_backlit=False,
+            is_low_light=False,
+            exif_data=None,
+        )
+
+        params = generator.generate(metrics)
+
+        assert params.face_relight_strength == 0.0
 
     def test_shadow_lift_reduced_with_flash(self):
         """Test that shadow lift is reduced when flash was used."""

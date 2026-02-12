@@ -233,6 +233,7 @@ class TestOptimizationParams:
         assert params.sharpness_amount == 1.0
         assert params.noise_reduction == 0.4
         assert params.skin_tone_protection is True
+        assert params.face_relight_strength == 0.0
 
 
 class TestConversionResult:

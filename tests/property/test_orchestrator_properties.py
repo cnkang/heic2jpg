@@ -62,6 +62,7 @@ def optimization_params_strategy(draw):
         sharpness_amount=draw(st.floats(min_value=0.0, max_value=2.0)),
         noise_reduction=draw(st.floats(min_value=0.0, max_value=1.0)),
         skin_tone_protection=draw(st.booleans()),
+        face_relight_strength=draw(st.floats(min_value=0.0, max_value=1.0)),
     )
 
 
@@ -184,6 +185,7 @@ def test_analysis_metrics_persistence(metrics, optimization_params):
         assert "contrast_adjustment" in opt_params
         assert "shadow_lift" in opt_params
         assert "highlight_recovery" in opt_params
+        assert "face_relight_strength" in opt_params
         assert "saturation_adjustment" in opt_params
         assert "sharpness_amount" in opt_params
         assert "noise_reduction" in opt_params
@@ -199,6 +201,10 @@ def test_analysis_metrics_persistence(metrics, optimization_params):
         assert abs(opt_params["shadow_lift"] - optimization_params.shadow_lift) < 0.001
         assert (
             abs(opt_params["highlight_recovery"] - optimization_params.highlight_recovery) < 0.001
+        )
+        assert (
+            abs(opt_params["face_relight_strength"] - optimization_params.face_relight_strength)
+            < 0.001
         )
         assert (
             abs(opt_params["saturation_adjustment"] - optimization_params.saturation_adjustment)

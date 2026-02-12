@@ -168,6 +168,7 @@ def optimization_params(draw):
         sharpness_amount=draw(st.floats(min_value=0.0, max_value=2.0)),
         noise_reduction=draw(st.floats(min_value=0.0, max_value=1.0)),
         skin_tone_protection=draw(st.booleans()),
+        face_relight_strength=draw(st.floats(min_value=0.0, max_value=1.0)),
     )
 
 

@@ -316,6 +316,175 @@ class TestImageConverter:
         auto_recovery = converter._calculate_auto_highlight_recovery(image, params)
         assert auto_recovery == 0.0
 
+    def test_extract_face_regions_from_xmp(self):
+        """Test extracting normalized face regions from XMP payload."""
+        xmp_payload = """
+        <x:xmpmeta xmlns:x="adobe:ns:meta/">
+          <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+            <rdf:Description xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/">
+              <mwg-rs:Regions>
+                <rdf:Bag>
+                  <rdf:li
+                    xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#"
+                    stArea:x="0.5"
+                    stArea:y="0.5"
+                    stArea:w="0.2"
+                    stArea:h="0.3"
+                    stArea:unit="normalized"/>
+                </rdf:Bag>
+              </mwg-rs:Regions>
+            </rdf:Description>
+          </rdf:RDF>
+        </x:xmpmeta>
+        """
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        regions = converter._extract_face_regions_from_xmp(xmp_payload, width=1000, height=800)
+
+        assert len(regions) == 1
+        x, y, w, h = regions[0]
+        assert x == 400
+        assert y == 280
+        assert w == 200
+        assert h == 240
+
+    def test_relight_faces_brightens_face_without_lifting_highlight_background(self):
+        """Test local face relighting brightens face region and protects bright background."""
+        image = np.full((200, 200, 3), 0.9, dtype=np.float32)
+        image[80:120, 80:120, :] = 0.2
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        baseline_face = float(np.mean(image[80:120, 80:120]))
+        baseline_bg = float(np.mean(image[:40, :40]))
+
+        relit = converter._relight_faces(image, [(80, 80, 40, 40)], amount=0.35)
+
+        relit_face = float(np.mean(relit[80:120, 80:120]))
+        relit_bg = float(np.mean(relit[:40, :40]))
+
+        assert relit_face > baseline_face + 0.03
+        assert relit_bg <= baseline_bg + 0.01
+
+    def test_apply_optimizations_uses_embedded_face_regions_before_detector(self):
+        """Test embedded XMP face regions are preferred over detector fallback."""
+        image = np.full((200, 200, 3), 220, dtype=np.uint8)
+        image[80:120, 80:120, :] = 40
+
+        params = OptimizationParams(
+            exposure_adjustment=0.0,
+            contrast_adjustment=1.0,
+            shadow_lift=0.0,
+            highlight_recovery=0.0,
+            saturation_adjustment=1.0,
+            sharpness_amount=0.0,
+            noise_reduction=0.0,
+            skin_tone_protection=False,
+            face_relight_strength=0.35,
+        )
+
+        xmp_payload = """
+        <x:xmpmeta xmlns:x="adobe:ns:meta/">
+          <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+            <rdf:Description xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/">
+              <mwg-rs:Regions>
+                <rdf:Bag>
+                  <rdf:li
+                    xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#"
+                    stArea:x="0.5"
+                    stArea:y="0.5"
+                    stArea:w="0.2"
+                    stArea:h="0.2"
+                    stArea:unit="normalized"/>
+                </rdf:Bag>
+              </mwg-rs:Regions>
+            </rdf:Description>
+          </rdf:RDF>
+        </x:xmpmeta>
+        """
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        with patch.object(converter, "_detect_faces", return_value=[]) as mock_detect:
+            optimized = converter._apply_optimizations(
+                image,
+                params,
+                exif_dict={converter.INTERNAL_XMP_KEY: xmp_payload},
+            )
+
+        assert float(np.mean(optimized[80:120, 80:120])) > float(np.mean(image[80:120, 80:120]))
+        mock_detect.assert_not_called()
+
+    def test_apply_optimizations_auto_triggers_face_relight_for_dark_face(self):
+        """Test dark face against bright background can trigger fallback relight."""
+        image = np.full((200, 200, 3), 220, dtype=np.uint8)
+        image[80:120, 80:120, :] = 40
+
+        params = OptimizationParams(
+            exposure_adjustment=0.0,
+            contrast_adjustment=1.0,
+            shadow_lift=0.0,
+            highlight_recovery=0.0,
+            saturation_adjustment=1.0,
+            sharpness_amount=0.0,
+            noise_reduction=0.0,
+            skin_tone_protection=False,
+            face_relight_strength=0.0,  # Force fallback trigger path
+        )
+
+        xmp_payload = """
+        <x:xmpmeta xmlns:x="adobe:ns:meta/">
+          <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+            <rdf:Description xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/">
+              <mwg-rs:Regions>
+                <rdf:Bag>
+                  <rdf:li
+                    xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#"
+                    stArea:x="0.5"
+                    stArea:y="0.5"
+                    stArea:w="0.2"
+                    stArea:h="0.2"
+                    stArea:unit="normalized"/>
+                </rdf:Bag>
+              </mwg-rs:Regions>
+            </rdf:Description>
+          </rdf:RDF>
+        </x:xmpmeta>
+        """
+
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        optimized = converter._apply_optimizations(
+            image,
+            params,
+            exif_dict={converter.INTERNAL_XMP_KEY: xmp_payload},
+        )
+
+        assert float(np.mean(optimized[80:120, 80:120])) > float(np.mean(image[80:120, 80:120]))
+
+    def test_sanitize_exif_for_jpeg_removes_internal_keys(self):
+        """Test internal metadata keys are removed before EXIF serialization."""
+        config = Config(quality=95)
+        converter = ImageConverter(config)
+
+        sanitized = converter._sanitize_exif_for_jpeg(
+            {
+                "0th": {},
+                "Exif": {},
+                converter.INTERNAL_XMP_KEY: b"xmp",
+                "custom": "skip-me",
+            }
+        )
+
+        assert "0th" in sanitized
+        assert "Exif" in sanitized
+        assert converter.INTERNAL_XMP_KEY not in sanitized
+        assert "custom" not in sanitized
+
     def test_adjust_saturation(self):
         """Test saturation adjustment."""
         # Create a colorful image with moderate saturation

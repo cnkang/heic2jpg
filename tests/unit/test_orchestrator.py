@@ -218,6 +218,7 @@ class TestConversionOrchestrator:
         # Verify optimization params
         assert data["optimization_params"]["exposure_adjustment"] == 0.0
         assert data["optimization_params"]["noise_reduction"] == 0.3
+        assert data["optimization_params"]["face_relight_strength"] == 0.0
 
     def test_persist_metrics_without_metrics(self, orchestrator, tmp_path):
         """Test that persist_metrics handles missing metrics gracefully."""

@@ -241,6 +241,10 @@ def test_per_image_optimization_parameters(metrics_list, style_prefs):
             f"Image {i}: Noise reduction should be in range [0.0, 1.0], got {params.noise_reduction}"
         )
 
+        assert 0.0 <= params.face_relight_strength <= 1.0, (
+            f"Image {i}: Face relighting strength should be in range [0.0, 1.0], got {params.face_relight_strength}"
+        )
+
         # Verify boolean flag is actually boolean
         assert isinstance(params.skin_tone_protection, bool), (
             f"Image {i}: skin_tone_protection should be boolean"
