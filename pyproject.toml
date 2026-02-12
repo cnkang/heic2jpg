@@ -1,5 +1,5 @@
 [project]
-name = "heic-to-jpg-converter"
+name = "heic2jpg"
 version = "0.1.0"
 description = "Convert iPhone HEIC photos to high-quality JPG format optimized for silver halide printing"
 readme = "README.md"
