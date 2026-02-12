@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from heic_converter.models import (
+from heic2jpg.models import (
     BatchResults,
     Config,
     ConversionResult,

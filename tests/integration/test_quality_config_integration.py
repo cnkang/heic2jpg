@@ -2,7 +2,7 @@
 
 import pytest
 
-from heic_converter.config import create_config
+from heic2jpg.config import create_config
 
 
 class TestQualityConfigurationIntegration:
@@ -73,7 +73,7 @@ class TestQualityConfigurationIntegration:
 
     def test_quality_validation_error_messages(self) -> None:
         """Test that quality validation provides clear error messages."""
-        from heic_converter.models import Config
+        from heic2jpg.models import Config
 
         with pytest.raises(ValueError) as exc_info:
             Config(quality=-1)

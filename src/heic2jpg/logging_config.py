@@ -65,13 +65,13 @@ def setup_logging(
         log_file: Optional path to log file for persistent logging
 
     Returns:
-        Configured logger instance for the heic_converter package
+        Configured logger instance for the heic2jpg package
     """
     # Determine effective logging level
     effective_level = logging.DEBUG if verbose else level
 
-    # Get the root logger for the heic_converter package
-    logger = logging.getLogger("heic_converter")
+    # Get the root logger for the heic2jpg package
+    logger = logging.getLogger("heic2jpg")
     logger.setLevel(effective_level)
 
     # Remove any existing handlers to avoid duplicates
@@ -129,7 +129,7 @@ def setup_logging(
 def get_logger(name: str) -> logging.Logger:
     """Get a logger instance for a specific module.
 
-    This function returns a child logger under the heic_converter namespace,
+    This function returns a child logger under the heic2jpg namespace,
     ensuring consistent configuration across all modules.
 
     Args:
@@ -138,15 +138,15 @@ def get_logger(name: str) -> logging.Logger:
     Returns:
         Logger instance for the specified module
     """
-    # Ensure the name is under the heic_converter namespace
-    if not name.startswith("heic_converter"):
-        name = f"heic_converter.{name}"
+    # Ensure the name is under the heic2jpg namespace
+    if not name.startswith("heic2jpg"):
+        name = f"heic2jpg.{name}"
 
     return logging.getLogger(name)
 
 
 def set_log_level(level: int | str) -> None:
-    """Change the logging level for the heic_converter package.
+    """Change the logging level for the heic2jpg package.
 
     This function allows dynamic adjustment of the logging level
     after initial configuration.
@@ -157,7 +157,7 @@ def set_log_level(level: int | str) -> None:
     Raises:
         ValueError: If the level string is invalid
     """
-    logger = logging.getLogger("heic_converter")
+    logger = logging.getLogger("heic2jpg")
 
     # Convert string level to int if necessary
     if isinstance(level, str):

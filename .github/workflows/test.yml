@@ -35,7 +35,7 @@ jobs:
 
     - name: Run unit tests
       run: |
-        uv run pytest tests/unit -v --cov=heic_converter --cov-report=xml --cov-report=term
+        uv run pytest tests/unit -v --cov=heic2jpg --cov-report=xml --cov-report=term
 
     - name: Run integration tests
       run: |
@@ -59,7 +59,7 @@ jobs:
     - name: Generate coverage report
       if: matrix.os == 'ubuntu-latest'
       run: |
-        uv run pytest --cov=heic_converter --cov-report=html
+        uv run pytest --cov=heic2jpg --cov-report=html
 
     - name: Upload coverage HTML
       if: matrix.os == 'ubuntu-latest'

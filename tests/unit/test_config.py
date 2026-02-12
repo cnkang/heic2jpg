@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from heic_converter.config import create_config, get_quality_from_env
-from heic_converter.models import Config, StylePreferences
+from heic2jpg.config import create_config, get_quality_from_env
+from heic2jpg.models import Config, StylePreferences
 
 
 class TestGetQualityFromEnv:

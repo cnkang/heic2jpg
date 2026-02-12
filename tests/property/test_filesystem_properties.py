@@ -10,7 +10,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from heic_converter.filesystem import FileSystemHandler
+from heic2jpg.filesystem import FileSystemHandler
 
 WINDOWS_RESERVED_NAMES = {
     "CON",

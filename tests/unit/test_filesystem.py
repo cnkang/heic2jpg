@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from heic_converter.errors import InvalidFileError, SecurityError
-from heic_converter.filesystem import FileSystemHandler
+from heic2jpg.errors import InvalidFileError, SecurityError
+from heic2jpg.filesystem import FileSystemHandler
 
 
 @pytest.fixture

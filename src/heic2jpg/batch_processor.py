@@ -9,14 +9,14 @@ from hashlib import blake2s
 from time import perf_counter
 from typing import TYPE_CHECKING
 
-from heic_converter.analyzer import ImageAnalyzer
-from heic_converter.converter import ImageConverter
-from heic_converter.errors import ErrorHandler
-from heic_converter.exif import EXIFExtractor
-from heic_converter.filesystem import FileSystemHandler
-from heic_converter.logging_config import get_logger
-from heic_converter.models import BatchResults, Config, ConversionResult, ConversionStatus
-from heic_converter.optimizer import OptimizationParamGenerator
+from heic2jpg.analyzer import ImageAnalyzer
+from heic2jpg.converter import ImageConverter
+from heic2jpg.errors import ErrorHandler
+from heic2jpg.exif import EXIFExtractor
+from heic2jpg.filesystem import FileSystemHandler
+from heic2jpg.logging_config import get_logger
+from heic2jpg.models import BatchResults, Config, ConversionResult, ConversionStatus
+from heic2jpg.optimizer import OptimizationParamGenerator
 
 if TYPE_CHECKING:
     from collections.abc import Callable

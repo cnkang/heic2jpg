@@ -15,10 +15,10 @@ from rich.progress import (
 )
 from rich.table import Table
 
-from heic_converter.config import create_config
-from heic_converter.logging_config import setup_logging
-from heic_converter.models import BatchResults, ConversionResult, ConversionStatus
-from heic_converter.orchestrator import ConversionOrchestrator
+from heic2jpg.config import create_config
+from heic2jpg.logging_config import setup_logging
+from heic2jpg.models import BatchResults, ConversionResult, ConversionStatus
+from heic2jpg.orchestrator import ConversionOrchestrator
 
 # Version information
 __version__ = "0.1.0"

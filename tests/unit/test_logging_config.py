@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from heic_converter.logging_config import (
+from heic2jpg.logging_config import (
     PlatformIndependentFormatter,
     get_logger,
     log_operation_complete,
@@ -76,7 +76,7 @@ class TestSetupLogging:
 
     def teardown_method(self):
         """Clean up logger after each test."""
-        logger = logging.getLogger("heic_converter")
+        logger = logging.getLogger("heic2jpg")
         logger.handlers.clear()
         logger.setLevel(logging.NOTSET)
 
@@ -84,7 +84,7 @@ class TestSetupLogging:
         """Test default logging configuration."""
         logger = setup_logging()
 
-        assert logger.name == "heic_converter"
+        assert logger.name == "heic2jpg"
         assert logger.level == logging.INFO
         assert len(logger.handlers) == 1
         assert isinstance(logger.handlers[0], logging.StreamHandler)
@@ -185,17 +185,17 @@ class TestSetupLogging:
 class TestGetLogger:
     """Test the get_logger function."""
 
-    def test_returns_logger_under_heic_converter_namespace(self):
-        """Test that get_logger returns logger under heic_converter namespace."""
+    def test_returns_logger_under_heic2jpg_namespace(self):
+        """Test that get_logger returns logger under heic2jpg namespace."""
         logger = get_logger("test_module")
 
-        assert logger.name == "heic_converter.test_module"
+        assert logger.name == "heic2jpg.test_module"
 
-    def test_preserves_heic_converter_prefix(self):
-        """Test that heic_converter prefix is not duplicated."""
-        logger = get_logger("heic_converter.test_module")
+    def test_preserves_heic2jpg_prefix(self):
+        """Test that heic2jpg prefix is not duplicated."""
+        logger = get_logger("heic2jpg.test_module")
 
-        assert logger.name == "heic_converter.test_module"
+        assert logger.name == "heic2jpg.test_module"
 
     def test_different_names_return_different_loggers(self):
         """Test that different names return different logger instances."""
@@ -215,7 +215,7 @@ class TestSetLogLevel:
 
     def teardown_method(self):
         """Clean up logger after each test."""
-        logger = logging.getLogger("heic_converter")
+        logger = logging.getLogger("heic2jpg")
         logger.handlers.clear()
         logger.setLevel(logging.NOTSET)
 
@@ -223,7 +223,7 @@ class TestSetLogLevel:
         """Test setting log level with integer."""
         set_log_level(logging.WARNING)
 
-        logger = logging.getLogger("heic_converter")
+        logger = logging.getLogger("heic2jpg")
         assert logger.level == logging.WARNING
         for handler in logger.handlers:
             assert handler.level == logging.WARNING
@@ -232,14 +232,14 @@ class TestSetLogLevel:
         """Test setting log level with string."""
         set_log_level("ERROR")
 
-        logger = logging.getLogger("heic_converter")
+        logger = logging.getLogger("heic2jpg")
         assert logger.level == logging.ERROR
 
     def test_set_level_case_insensitive(self):
         """Test that string level is case-insensitive."""
         set_log_level("debug")
 
-        logger = logging.getLogger("heic_converter")
+        logger = logging.getLogger("heic2jpg")
         assert logger.level == logging.DEBUG
 
     def test_invalid_string_level_raises_error(self):
@@ -257,7 +257,7 @@ class TestOperationLogging:
 
     def teardown_method(self):
         """Clean up logger after each test."""
-        logger = logging.getLogger("heic_converter")
+        logger = logging.getLogger("heic2jpg")
         logger.handlers.clear()
         logger.setLevel(logging.NOTSET)
 
@@ -336,7 +336,7 @@ class TestEnglishOnlyMessages:
 
     def teardown_method(self):
         """Clean up logger after each test."""
-        logger = logging.getLogger("heic_converter")
+        logger = logging.getLogger("heic2jpg")
         logger.handlers.clear()
         logger.setLevel(logging.NOTSET)
 

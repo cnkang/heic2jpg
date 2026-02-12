@@ -15,9 +15,9 @@ from typing import TYPE_CHECKING
 import pytest
 from PIL import Image
 
-from heic_converter.config import create_config
-from heic_converter.models import ConversionStatus
-from heic_converter.orchestrator import ConversionOrchestrator
+from heic2jpg.config import create_config
+from heic2jpg.models import ConversionStatus
+from heic2jpg.orchestrator import ConversionOrchestrator
 
 if TYPE_CHECKING:
     from pathlib import Path

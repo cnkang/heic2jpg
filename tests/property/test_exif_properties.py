@@ -10,8 +10,8 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from PIL import Image
 
-from heic_converter.exif import EXIFExtractor
-from heic_converter.models import EXIFMetadata
+from heic2jpg.exif import EXIFExtractor
+from heic2jpg.models import EXIFMetadata
 
 
 # Custom strategies for generating test data

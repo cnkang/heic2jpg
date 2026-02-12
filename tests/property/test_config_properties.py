@@ -8,8 +8,8 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from heic_converter.config import create_config, get_quality_from_env
-from heic_converter.models import Config
+from heic2jpg.config import create_config, get_quality_from_env
+from heic2jpg.models import Config
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

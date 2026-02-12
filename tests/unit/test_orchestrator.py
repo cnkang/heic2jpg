@@ -8,13 +8,13 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 
-from heic_converter.models import (
+from heic2jpg.models import (
     Config,
     ConversionResult,
     ConversionStatus,
     StylePreferences,
 )
-from heic_converter.orchestrator import ConversionOrchestrator
+from heic2jpg.orchestrator import ConversionOrchestrator
 
 
 class TestConversionOrchestrator:
@@ -79,9 +79,9 @@ class TestConversionOrchestrator:
         assert result.status == ConversionStatus.SKIPPED
         assert "already exists" in result.error_message.lower()
 
-    @patch("heic_converter.orchestrator.ImageConverter")
-    @patch("heic_converter.orchestrator.ImageAnalyzer")
-    @patch("heic_converter.orchestrator.OptimizationParamGenerator")
+    @patch("heic2jpg.orchestrator.ImageConverter")
+    @patch("heic2jpg.orchestrator.ImageAnalyzer")
+    @patch("heic2jpg.orchestrator.OptimizationParamGenerator")
     def test_convert_single_success_flow(
         self,
         mock_optimizer_class,
@@ -144,7 +144,7 @@ class TestConversionOrchestrator:
         assert result.failed == 0
         assert result.skipped == 0
 
-    @patch("heic_converter.orchestrator.BatchProcessor")
+    @patch("heic2jpg.orchestrator.BatchProcessor")
     def test_convert_batch_creates_processor(
         self, mock_batch_processor_class, orchestrator, tmp_path
     ):
@@ -159,7 +159,7 @@ class TestConversionOrchestrator:
         mock_batch_processor_class.return_value = mock_processor
 
         # Mock the process_batch method
-        from heic_converter.models import BatchResults
+        from heic2jpg.models import BatchResults
 
         mock_results = BatchResults(
             results=[],

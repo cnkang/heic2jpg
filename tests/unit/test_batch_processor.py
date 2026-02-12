@@ -3,9 +3,9 @@
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-from heic_converter.batch_processor import BatchProcessor
-from heic_converter.config import Config
-from heic_converter.models import ConversionResult, ConversionStatus
+from heic2jpg.batch_processor import BatchProcessor
+from heic2jpg.config import Config
+from heic2jpg.models import ConversionResult, ConversionStatus
 
 
 class TestBatchProcessor:
@@ -95,7 +95,7 @@ class TestBatchProcessor:
         )
 
         with patch(
-            "heic_converter.batch_processor._process_single_file_worker",
+            "heic2jpg.batch_processor._process_single_file_worker",
             return_value=mock_result,
         ):
             processor.process_batch([test_file])
@@ -145,9 +145,9 @@ class TestBatchProcessor:
         from concurrent.futures import ThreadPoolExecutor
 
         with (
-            patch("heic_converter.batch_processor.ProcessPoolExecutor", ThreadPoolExecutor),
+            patch("heic2jpg.batch_processor.ProcessPoolExecutor", ThreadPoolExecutor),
             patch(
-                "heic_converter.batch_processor._process_single_file_worker",
+                "heic2jpg.batch_processor._process_single_file_worker",
                 side_effect=mock_worker,
             ),
         ):
@@ -180,9 +180,9 @@ class TestBatchProcessor:
         from concurrent.futures import ThreadPoolExecutor
 
         with (
-            patch("heic_converter.batch_processor.ProcessPoolExecutor", ThreadPoolExecutor),
+            patch("heic2jpg.batch_processor.ProcessPoolExecutor", ThreadPoolExecutor),
             patch(
-                "heic_converter.batch_processor._process_single_file_worker",
+                "heic2jpg.batch_processor._process_single_file_worker",
                 side_effect=mock_worker,
             ),
         ):
@@ -222,9 +222,9 @@ class TestBatchProcessor:
             )
 
         with (
-            patch("heic_converter.batch_processor.ProcessPoolExecutor", ThreadPoolExecutor),
+            patch("heic2jpg.batch_processor.ProcessPoolExecutor", ThreadPoolExecutor),
             patch(
-                "heic_converter.batch_processor._process_single_file_worker",
+                "heic2jpg.batch_processor._process_single_file_worker",
                 side_effect=mock_worker,
             ),
         ):
@@ -242,7 +242,7 @@ class TestProcessSingleFileWorker:
 
     def test_worker_validates_input(self, tmp_path):
         """Test that worker validates input file."""
-        from heic_converter.batch_processor import _process_single_file_worker
+        from heic2jpg.batch_processor import _process_single_file_worker
 
         # Non-existent file
         config = Config()
@@ -255,7 +255,7 @@ class TestProcessSingleFileWorker:
 
     def test_worker_handles_no_overwrite(self, tmp_path):
         """Test that worker respects no-overwrite flag."""
-        from heic_converter.batch_processor import _process_single_file_worker
+        from heic2jpg.batch_processor import _process_single_file_worker
 
         # Create a fake input file
         input_file = tmp_path / "test.heic"
@@ -269,7 +269,7 @@ class TestProcessSingleFileWorker:
 
         # Mock validation to pass
         with patch(
-            "heic_converter.batch_processor.FileSystemHandler.validate_input_file"
+            "heic2jpg.batch_processor.FileSystemHandler.validate_input_file"
         ) as mock_validate:
             mock_validate.return_value = MagicMock(valid=True)
 

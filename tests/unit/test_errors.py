@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from heic_converter.errors import (
+from heic2jpg.errors import (
     ConversionError,
     ErrorCategory,
     ErrorHandler,
@@ -12,7 +12,7 @@ from heic_converter.errors import (
     ProcessingError,
     SecurityError,
 )
-from heic_converter.models import ConversionStatus
+from heic2jpg.models import ConversionStatus
 
 
 class TestErrorClasses:

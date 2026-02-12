@@ -7,8 +7,8 @@ from unittest.mock import Mock
 import pytest
 from PIL import Image
 
-from heic_converter.exif import EXIFExtractor
-from heic_converter.models import EXIFMetadata
+from heic2jpg.exif import EXIFExtractor
+from heic2jpg.models import EXIFMetadata
 
 
 class TestEXIFExtractor:

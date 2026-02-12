@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from heic_converter.models import (
+from heic2jpg.models import (
     ImageMetrics,
     OptimizationParams,
     StylePreferences,

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import cv2
 import numpy as np
 
-from heic_converter.models import EXIFMetadata, ImageMetrics
+from heic2jpg.models import EXIFMetadata, ImageMetrics
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray

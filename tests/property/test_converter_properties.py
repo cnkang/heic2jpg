@@ -7,10 +7,10 @@ import pytest
 from hypothesis import given, settings
 from PIL import Image
 
-from heic_converter.analyzer import ImageAnalyzer
-from heic_converter.converter import ImageConverter
-from heic_converter.models import Config, ConversionStatus, StylePreferences
-from heic_converter.optimizer import OptimizationParamGenerator
+from heic2jpg.analyzer import ImageAnalyzer
+from heic2jpg.converter import ImageConverter
+from heic2jpg.models import Config, ConversionStatus, StylePreferences
+from heic2jpg.optimizer import OptimizationParamGenerator
 from tests.strategies import (
     backlit_image,
     image_with_highlights,
@@ -48,7 +48,7 @@ def test_conversion_preserves_dimensions(image):
         converter = ImageConverter(config)
 
         # Create minimal optimization params (no adjustments)
-        from heic_converter.models import OptimizationParams
+        from heic2jpg.models import OptimizationParams
 
         params = OptimizationParams(
             exposure_adjustment=0.0,

@@ -7,12 +7,12 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from heic_converter.models import (
+from heic2jpg.models import (
     EXIFMetadata,
     ImageMetrics,
     StylePreferences,
 )
-from heic_converter.optimizer import OptimizationParamGenerator
+from heic2jpg.optimizer import OptimizationParamGenerator
 
 
 # Custom strategies for generating test data

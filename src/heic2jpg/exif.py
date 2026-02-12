@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 import pillow_heif
 from PIL import Image
 
-from heic_converter.models import EXIFMetadata
+from heic2jpg.models import EXIFMetadata
 
 if TYPE_CHECKING:
     from pathlib import Path

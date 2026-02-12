@@ -6,7 +6,7 @@ import pytest
 @pytest.fixture
 def sample_config():
     """Provide a sample configuration for testing."""
-    from heic_converter.models import Config, StylePreferences
+    from heic2jpg.models import Config, StylePreferences
 
     return Config(
         quality=95,
@@ -21,7 +21,7 @@ def sample_config():
 @pytest.fixture
 def sample_exif_metadata():
     """Provide sample EXIF metadata for testing."""
-    from heic_converter.models import EXIFMetadata
+    from heic2jpg.models import EXIFMetadata
 
     return EXIFMetadata(
         iso=400,
@@ -38,7 +38,7 @@ def sample_exif_metadata():
 @pytest.fixture
 def sample_image_metrics(sample_exif_metadata):
     """Provide sample image metrics for testing."""
-    from heic_converter.models import ImageMetrics
+    from heic2jpg.models import ImageMetrics
 
     return ImageMetrics(
         exposure_level=0.0,
@@ -59,7 +59,7 @@ def sample_image_metrics(sample_exif_metadata):
 @pytest.fixture
 def sample_optimization_params():
     """Provide sample optimization parameters for testing."""
-    from heic_converter.models import OptimizationParams
+    from heic2jpg.models import OptimizationParams
 
     return OptimizationParams(
         exposure_adjustment=0.0,

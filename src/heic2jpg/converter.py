@@ -12,8 +12,8 @@ import piexif
 import pillow_heif
 from PIL import Image
 
-from heic_converter.errors import InvalidFileError, ProcessingError
-from heic_converter.models import (
+from heic2jpg.errors import InvalidFileError, ProcessingError
+from heic2jpg.models import (
     Config,
     ConversionResult,
     ConversionStatus,

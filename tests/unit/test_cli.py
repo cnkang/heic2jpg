@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from heic_converter.cli import main
-from heic_converter.models import BatchResults, ConversionResult, ConversionStatus
+from heic2jpg.cli import main
+from heic2jpg.models import BatchResults, ConversionResult, ConversionStatus
 
 
 class TestCLIVersionAndHelp:
@@ -45,8 +45,8 @@ class TestCLIVersionAndHelp:
 class TestCLIArgumentParsing:
     """Test CLI argument parsing."""
 
-    @patch("heic_converter.cli.ConversionOrchestrator")
-    @patch("heic_converter.cli.setup_logging")
+    @patch("heic2jpg.cli.ConversionOrchestrator")
+    @patch("heic2jpg.cli.setup_logging")
     def test_single_file_argument(
         self, mock_setup_logging: MagicMock, mock_orchestrator: MagicMock
     ) -> None:
@@ -73,8 +73,8 @@ class TestCLIArgumentParsing:
             assert result.exit_code == 0
             mock_instance.convert_single.assert_called_once()
 
-    @patch("heic_converter.cli.ConversionOrchestrator")
-    @patch("heic_converter.cli.setup_logging")
+    @patch("heic2jpg.cli.ConversionOrchestrator")
+    @patch("heic2jpg.cli.setup_logging")
     def test_batch_argument_parsing(
         self, mock_setup_logging: MagicMock, mock_orchestrator: MagicMock
     ) -> None:
@@ -105,8 +105,8 @@ class TestCLIArgumentParsing:
             # Batch conversion should be called for multiple files
             assert mock_instance.convert_batch.called
 
-    @patch("heic_converter.cli.ConversionOrchestrator")
-    @patch("heic_converter.cli.setup_logging")
+    @patch("heic2jpg.cli.ConversionOrchestrator")
+    @patch("heic2jpg.cli.setup_logging")
     def test_quality_argument(
         self, mock_setup_logging: MagicMock, mock_orchestrator: MagicMock
     ) -> None:
@@ -134,8 +134,8 @@ class TestCLIArgumentParsing:
             config = call_args[0][0]
             assert config.quality == 95
 
-    @patch("heic_converter.cli.ConversionOrchestrator")
-    @patch("heic_converter.cli.setup_logging")
+    @patch("heic2jpg.cli.ConversionOrchestrator")
+    @patch("heic2jpg.cli.setup_logging")
     def test_output_dir_argument(
         self, mock_setup_logging: MagicMock, mock_orchestrator: MagicMock
     ) -> None:
@@ -164,8 +164,8 @@ class TestCLIArgumentParsing:
             config = call_args[0][0]
             assert config.output_dir == output_dir
 
-    @patch("heic_converter.cli.ConversionOrchestrator")
-    @patch("heic_converter.cli.setup_logging")
+    @patch("heic2jpg.cli.ConversionOrchestrator")
+    @patch("heic2jpg.cli.setup_logging")
     def test_no_overwrite_flag(
         self, mock_setup_logging: MagicMock, mock_orchestrator: MagicMock
     ) -> None:
@@ -193,8 +193,8 @@ class TestCLIArgumentParsing:
             config = call_args[0][0]
             assert config.no_overwrite is True
 
-    @patch("heic_converter.cli.ConversionOrchestrator")
-    @patch("heic_converter.cli.setup_logging")
+    @patch("heic2jpg.cli.ConversionOrchestrator")
+    @patch("heic2jpg.cli.setup_logging")
     def test_verbose_flag(
         self, mock_setup_logging: MagicMock, mock_orchestrator: MagicMock
     ) -> None:
@@ -228,8 +228,8 @@ class TestCLIArgumentParsing:
 class TestCLIErrorHandling:
     """Test CLI error handling."""
 
-    @patch("heic_converter.cli.ConversionOrchestrator")
-    @patch("heic_converter.cli.setup_logging")
+    @patch("heic2jpg.cli.ConversionOrchestrator")
+    @patch("heic2jpg.cli.setup_logging")
     def test_failed_conversion_exits_with_error(
         self, mock_setup_logging: MagicMock, mock_orchestrator: MagicMock
     ) -> None:
@@ -255,8 +255,8 @@ class TestCLIErrorHandling:
             assert result.exit_code == 1
             assert "Failed" in result.output
 
-    @patch("heic_converter.cli.ConversionOrchestrator")
-    @patch("heic_converter.cli.setup_logging")
+    @patch("heic2jpg.cli.ConversionOrchestrator")
+    @patch("heic2jpg.cli.setup_logging")
     def test_batch_with_failures_exits_with_error(
         self, mock_setup_logging: MagicMock, mock_orchestrator: MagicMock
     ) -> None:
@@ -283,8 +283,8 @@ class TestCLIErrorHandling:
 
             assert result.exit_code == 1
 
-    @patch("heic_converter.cli.ConversionOrchestrator")
-    @patch("heic_converter.cli.setup_logging")
+    @patch("heic2jpg.cli.ConversionOrchestrator")
+    @patch("heic2jpg.cli.setup_logging")
     def test_exception_handling(
         self, mock_setup_logging: MagicMock, mock_orchestrator: MagicMock
     ) -> None:

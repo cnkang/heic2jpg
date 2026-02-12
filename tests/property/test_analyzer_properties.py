@@ -8,8 +8,8 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from heic_converter.analyzer import ImageAnalyzer
-from heic_converter.models import EXIFMetadata
+from heic2jpg.analyzer import ImageAnalyzer
+from heic2jpg.models import EXIFMetadata
 
 
 # Custom strategies for generating test images

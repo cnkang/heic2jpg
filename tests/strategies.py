@@ -157,7 +157,7 @@ def optimization_params(draw):
     Returns:
         OptimizationParams instance
     """
-    from heic_converter.models import OptimizationParams
+    from heic2jpg.models import OptimizationParams
 
     return OptimizationParams(
         exposure_adjustment=draw(st.floats(min_value=-2.0, max_value=2.0)),

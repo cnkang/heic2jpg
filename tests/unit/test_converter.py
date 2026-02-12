@@ -8,10 +8,10 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from heic_converter.analyzer import ImageAnalyzer
-from heic_converter.converter import ImageConverter
-from heic_converter.errors import InvalidFileError
-from heic_converter.models import Config, ConversionStatus, OptimizationParams
+from heic2jpg.analyzer import ImageAnalyzer
+from heic2jpg.converter import ImageConverter
+from heic2jpg.errors import InvalidFileError
+from heic2jpg.models import Config, ConversionStatus, OptimizationParams
 
 
 class TestImageConverter:
@@ -80,8 +80,8 @@ class TestImageConverter:
         converter = ImageConverter(config)
 
         with (
-            patch("heic_converter.converter.Image.open") as mock_open,
-            patch("heic_converter.converter.piexif.load", side_effect=ValueError("bad exif")),
+            patch("heic2jpg.converter.Image.open") as mock_open,
+            patch("heic2jpg.converter.piexif.load", side_effect=ValueError("bad exif")),
         ):
             mock_open.return_value.__enter__.return_value = pil_image
             decoded_image, exif_dict, icc_profile = converter._decode_heic(Path("dummy.heic"))
@@ -105,8 +105,8 @@ class TestImageConverter:
         converter = ImageConverter(config)
 
         with (
-            patch("heic_converter.converter.Image.open") as mock_open,
-            patch("heic_converter.converter.piexif.load", return_value=expected_exif),
+            patch("heic2jpg.converter.Image.open") as mock_open,
+            patch("heic2jpg.converter.piexif.load", return_value=expected_exif),
             patch.object(source_image, "convert", return_value=converted_image),
         ):
             mock_open.return_value.__enter__.return_value = source_image

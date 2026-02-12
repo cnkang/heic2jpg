@@ -1,11 +1,11 @@
 """Unit tests for OptimizationParamGenerator class."""
 
-from heic_converter.models import (
+from heic2jpg.models import (
     EXIFMetadata,
     ImageMetrics,
     StylePreferences,
 )
-from heic_converter.optimizer import OptimizationParamGenerator
+from heic2jpg.optimizer import OptimizationParamGenerator
 
 
 class TestOptimizationParamGenerator:

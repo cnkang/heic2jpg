@@ -40,14 +40,14 @@ dev = [
 ]
 
 [project.scripts]
-heic2jpg = "heic_converter.__main__:main"
+heic2jpg = "heic2jpg.__main__:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/heic_converter"]
+packages = ["src/heic2jpg"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -57,7 +57,7 @@ python_functions = ["test_*"]
 addopts = [
     "-v",
     "--strict-markers",
-    "--cov=heic_converter",
+    "--cov=heic2jpg",
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
@@ -108,7 +108,7 @@ ignore = [
     "ARG",    # Unused function arguments in tests
     "S101",   # Use of assert in tests
 ]
-"src/heic_converter/models.py" = [
+"src/heic2jpg/models.py" = [
     "TCH003",  # Path is used at runtime in dataclass fields
 ]
 

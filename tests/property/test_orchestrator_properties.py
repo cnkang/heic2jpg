@@ -12,7 +12,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from heic_converter.models import (
+from heic2jpg.models import (
     Config,
     ConversionResult,
     ConversionStatus,
@@ -20,7 +20,7 @@ from heic_converter.models import (
     OptimizationParams,
     StylePreferences,
 )
-from heic_converter.orchestrator import ConversionOrchestrator
+from heic2jpg.orchestrator import ConversionOrchestrator
 
 
 @st.composite
