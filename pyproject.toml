@@ -41,7 +41,6 @@ dev = [
 
 [project.scripts]
 heic2jpg = "heic_converter.__main__:main"
-heic-converter = "heic_converter.__main__:main"
 
 [build-system]
 requires = ["hatchling"]
