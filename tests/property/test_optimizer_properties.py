@@ -203,11 +203,13 @@ def test_per_image_optimization_parameters(metrics_list, style_prefs):
     has_contrast_variation = len(set(contrast_adjustments)) > 1
     has_noise_variation = len(set(noise_reductions)) > 1
 
-    # With varied metrics, we should see at least some variation
-    # (unless all metrics happen to produce identical parameters, which is unlikely)
-    assert has_exposure_variation or has_contrast_variation or has_noise_variation, (
-        "Images with different metrics should produce different optimization parameters"
-    )
+    # Only require parameter variation when the generated input metrics actually differ.
+    # Hypothesis can still generate identical items in the batch.
+    input_metrics_vary = len({repr(metrics) for metrics in metrics_list}) > 1
+    if input_metrics_vary:
+        assert has_exposure_variation or has_contrast_variation or has_noise_variation, (
+            "Images with different metrics should produce different optimization parameters"
+        )
 
     # Verify that each parameter is within valid ranges
     for i, params in enumerate(params_list):

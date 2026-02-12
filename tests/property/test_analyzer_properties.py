@@ -123,36 +123,15 @@ def test_per_image_analysis_independence(images):
     # Verify that we got metrics for all images
     assert len(metrics_list) == len(images), "Should get metrics for each image"
 
-    # Check that at least some metrics differ between images
-    # (with random images, it's extremely unlikely all metrics are identical)
-    # However, if hypothesis generates identical images, we should handle that gracefully
+    # Independence check: per-image results should not depend on analysis order.
+    reversed_metrics = []
+    for image in reversed(images):
+        reversed_metrics.append(analyzer.analyze(image, exif=None))
 
-    # Collect all exposure levels
-    exposure_levels = [m.exposure_level for m in metrics_list]
-
-    # Collect all contrast levels
-    contrast_levels = [m.contrast_level for m in metrics_list]
-
-    # Collect all saturation levels
-    saturation_levels = [m.saturation_level for m in metrics_list]
-
-    # At least one metric type should show variation across images
-    # (not all values identical)
-    # BUT: if hypothesis generates identical images (edge case), all metrics could be identical
-    # In that case, we just verify the metrics are valid
-    has_exposure_variation = len(set(exposure_levels)) > 1
-    has_contrast_variation = len(set(contrast_levels)) > 1
-    has_saturation_variation = len(set(saturation_levels)) > 1
-
-    # If all images are identical (rare edge case), skip the variation check
-    # Check if first two images are identical
-    images_identical = len(images) >= 2 and np.array_equal(images[0], images[1])
-
-    if not images_identical:
-        # With varied exposure images, we should see at least exposure variation
-        # But we'll be lenient and accept any variation
-        assert has_exposure_variation or has_contrast_variation or has_saturation_variation, (
-            "Images with different characteristics should produce different metrics"
+    for i, metrics in enumerate(metrics_list):
+        reverse_index = len(images) - 1 - i
+        assert metrics == reversed_metrics[reverse_index], (
+            f"Image {i}: Metrics should be identical regardless of batch order"
         )
 
     # Verify that each metric is within valid ranges
