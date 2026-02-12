@@ -38,6 +38,7 @@ A Python application that converts iPhone HEIC photos to high-quality JPG format
 - **Metadata & Color Profile Preservation**: Preserves EXIF metadata and embedded ICC profile
 - **Cross-Platform**: Works on macOS, Windows, and Linux
 - **Smart Adjustments**: Handles challenging lighting conditions (overexposed, backlit, low-light)
+- **Backlit Portrait Recovery**: Uses embedded XMP face regions when available and falls back to local face relighting for dark subjects against bright backgrounds
 
 ## Requirements
 
