@@ -160,7 +160,7 @@ def style_preferences(draw):
     )
 
 
-# Feature: heic-to-jpg-converter, Property 23: Per-Image Optimization Parameters
+# Feature: heic2jpg, Property 23: Per-Image Optimization Parameters
 @given(
     metrics_list=varied_image_metrics(),
     style_prefs=style_preferences(),
@@ -254,7 +254,7 @@ def test_per_image_optimization_parameters(metrics_list, style_prefs):
             )
 
 
-# Feature: heic-to-jpg-converter, Property 29: EXIF-Informed Noise Reduction
+# Feature: heic2jpg, Property 29: EXIF-Informed Noise Reduction
 @given(
     metrics=image_metrics(),
     style_prefs=style_preferences(),

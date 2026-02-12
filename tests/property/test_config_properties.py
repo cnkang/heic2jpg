@@ -34,7 +34,7 @@ def env_var(name: str, value: str | None) -> Iterator[None]:
             os.environ[name] = old_value
 
 
-# Feature: heic-to-jpg-converter, Property 4: Quality Configuration Acceptance
+# Feature: heic2jpg, Property 4: Quality Configuration Acceptance
 @given(quality=st.integers(min_value=0, max_value=100))
 @settings(max_examples=100)
 @pytest.mark.property_test
@@ -60,7 +60,7 @@ def test_quality_configuration_acceptance(quality: int) -> None:
         )
 
 
-# Feature: heic-to-jpg-converter, Property 5: Quality Validation
+# Feature: heic2jpg, Property 5: Quality Validation
 @given(
     quality=st.one_of(
         st.integers(max_value=-1),  # Below valid range

@@ -1,6 +1,6 @@
 """Property-based tests for error handling.
 
-Feature: heic-to-jpg-converter
+Feature: heic2jpg
 """
 
 import tempfile
@@ -15,7 +15,7 @@ from heic_converter.filesystem import FileSystemHandler
 from heic_converter.models import Config, ConversionStatus, StylePreferences
 
 
-# Feature: heic-to-jpg-converter, Property 3: Invalid Input Error Handling
+# Feature: heic2jpg, Property 3: Invalid Input Error Handling
 @given(
     file_extension=st.sampled_from([".txt", ".jpg", ".png", ".pdf", ".doc", ".mp4"]),
     file_content=st.binary(min_size=0, max_size=1024),
@@ -62,7 +62,7 @@ def test_invalid_format_returns_descriptive_error(file_extension: str, file_cont
             temp_path.unlink()
 
 
-# Feature: heic-to-jpg-converter, Property 3: Invalid Input Error Handling
+# Feature: heic2jpg, Property 3: Invalid Input Error Handling
 @given(
     corrupted_content=st.binary(min_size=10, max_size=1024),
 )
@@ -141,7 +141,7 @@ def test_corrupted_heic_returns_descriptive_error(corrupted_content: bytes):
             output_path.unlink()
 
 
-# Feature: heic-to-jpg-converter, Property 3: Invalid Input Error Handling
+# Feature: heic2jpg, Property 3: Invalid Input Error Handling
 @given(
     file_size=st.integers(min_value=0, max_value=100),
 )
@@ -223,7 +223,7 @@ def test_empty_or_tiny_heic_returns_descriptive_error(file_size: int):
             output_path.unlink()
 
 
-# Feature: heic-to-jpg-converter, Property 3: Invalid Input Error Handling
+# Feature: heic2jpg, Property 3: Invalid Input Error Handling
 @pytest.mark.property_test
 def test_nonexistent_file_returns_descriptive_error():
     """Property 3: Invalid Input Error Handling.
@@ -267,7 +267,7 @@ def test_nonexistent_file_returns_descriptive_error():
     )
 
 
-# Feature: heic-to-jpg-converter, Property 13: Descriptive Error Messages
+# Feature: heic2jpg, Property 13: Descriptive Error Messages
 @given(
     error_type=st.sampled_from(
         [
@@ -388,7 +388,7 @@ def test_error_messages_are_descriptive(error_type: str, filename: str):
     assert has_english, f"Error message should be in English. Message: {result.error_message}"
 
 
-# Feature: heic-to-jpg-converter, Property 13: Descriptive Error Messages
+# Feature: heic2jpg, Property 13: Descriptive Error Messages
 @given(
     operation=st.sampled_from(["conversion", "validation", "analysis", "optimization"]),
     error_message=st.text(min_size=5, max_size=100),
@@ -444,7 +444,7 @@ def test_conversion_result_error_messages_are_descriptive(operation: str, error_
     )
 
 
-# Feature: heic-to-jpg-converter, Property 13: Descriptive Error Messages
+# Feature: heic2jpg, Property 13: Descriptive Error Messages
 @pytest.mark.property_test
 def test_filesystem_validation_errors_are_descriptive():
     """Property 13: Descriptive Error Messages.

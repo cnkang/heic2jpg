@@ -22,7 +22,7 @@ from tests.strategies import (
 )
 
 
-# Feature: heic-to-jpg-converter, Property 1: HEIC to JPG Conversion Success
+# Feature: heic2jpg, Property 1: HEIC to JPG Conversion Success
 @given(image=generate_test_images(min_width=100, max_width=400, min_height=100, max_height=400))
 @settings(max_examples=100, deadline=None)
 @pytest.mark.property_test
@@ -79,7 +79,7 @@ def test_conversion_preserves_dimensions(image):
         assert output_height == input_height, f"Height mismatch: {output_height} != {input_height}"
 
 
-# Feature: heic-to-jpg-converter, Property 24: Highlight Preservation
+# Feature: heic2jpg, Property 24: Highlight Preservation
 @given(image=image_with_highlights())
 @settings(max_examples=100, deadline=None)
 @pytest.mark.property_test
@@ -120,7 +120,7 @@ def test_highlight_preservation(image):
     )
 
 
-# Feature: heic-to-jpg-converter, Property 25: Skin Tone Stability
+# Feature: heic2jpg, Property 25: Skin Tone Stability
 @given(image=image_with_skin_tones())
 @settings(max_examples=100, deadline=None)
 @pytest.mark.property_test
@@ -171,7 +171,7 @@ def test_skin_tone_stability(image):
         )
 
 
-# Feature: heic-to-jpg-converter, Property 30: Backlit Subject Shadow Recovery
+# Feature: heic2jpg, Property 30: Backlit Subject Shadow Recovery
 @given(image=backlit_image())
 @settings(max_examples=100, deadline=None)
 @pytest.mark.property_test
@@ -230,7 +230,7 @@ def test_backlit_shadow_recovery(image):
     )
 
 
-# Feature: heic-to-jpg-converter, Property 31: Low-Light Noise Reduction Quality
+# Feature: heic2jpg, Property 31: Low-Light Noise Reduction Quality
 @given(image=low_light_image())
 @settings(max_examples=100, deadline=None)
 @pytest.mark.property_test

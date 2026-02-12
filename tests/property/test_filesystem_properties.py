@@ -93,7 +93,7 @@ safe_path_component = st.text(
 ).filter(lambda part: part.upper() not in WINDOWS_RESERVED_NAMES)
 
 
-# Feature: heic-to-jpg-converter, Property 10: Path Traversal Prevention
+# Feature: heic2jpg, Property 10: Path Traversal Prevention
 @given(path=malicious_paths())
 @settings(max_examples=100)
 @pytest.mark.property_test
@@ -121,7 +121,7 @@ def test_path_traversal_prevention(path):
     )
 
 
-# Feature: heic-to-jpg-converter, Property 11: File Size Validation
+# Feature: heic2jpg, Property 11: File Size Validation
 @given(case=oversized_file_case())
 @settings(max_examples=100, deadline=None)  # Disable deadline for file I/O operations
 @pytest.mark.property_test
@@ -165,7 +165,7 @@ def test_file_size_validation(case):
         FileSystemHandler.MAX_FILE_SIZE = original_max_size
 
 
-# Feature: heic-to-jpg-converter, Property 27: Platform-Independent Path Handling
+# Feature: heic2jpg, Property 27: Platform-Independent Path Handling
 @given(
     # Generate various path components
     path_components=st.lists(

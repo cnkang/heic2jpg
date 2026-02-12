@@ -93,7 +93,7 @@ def exif_metadata(draw):
     )
 
 
-# Feature: heic-to-jpg-converter, Property 22: Per-Image Analysis Independence
+# Feature: heic2jpg, Property 22: Per-Image Analysis Independence
 @given(
     images=st.lists(
         varied_exposure_images(),

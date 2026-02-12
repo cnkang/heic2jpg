@@ -65,7 +65,7 @@ def optimization_params_strategy(draw):
     )
 
 
-# Feature: heic-to-jpg-converter, Property 26: Analysis Metrics Persistence
+# Feature: heic2jpg, Property 26: Analysis Metrics Persistence
 @given(
     metrics=image_metrics_strategy(),
     optimization_params=optimization_params_strategy(),

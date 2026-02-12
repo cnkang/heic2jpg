@@ -48,7 +48,7 @@ def simple_test_images(draw):
     return img
 
 
-# Feature: heic-to-jpg-converter, Property 2: EXIF Metadata Preservation
+# Feature: heic2jpg, Property 2: EXIF Metadata Preservation
 # Note: This test validates EXIF extraction. Full preservation test requires converter implementation.
 @given(image=simple_test_images())
 @settings(max_examples=100, deadline=None)
@@ -83,7 +83,7 @@ def test_exif_extraction_handles_missing_data(image):
     assert result.metering_mode is None
 
 
-# Feature: heic-to-jpg-converter, Property 32: EXIF Data Fallback
+# Feature: heic2jpg, Property 32: EXIF Data Fallback
 @given(image=simple_test_images())
 @settings(max_examples=100, deadline=None)
 @pytest.mark.property_test
