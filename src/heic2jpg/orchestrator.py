@@ -330,6 +330,7 @@ class ConversionOrchestrator:
                     "contrast_adjustment": result.optimization_params.contrast_adjustment,
                     "shadow_lift": result.optimization_params.shadow_lift,
                     "highlight_recovery": result.optimization_params.highlight_recovery,
+                    "face_relight_strength": result.optimization_params.face_relight_strength,
                     "saturation_adjustment": result.optimization_params.saturation_adjustment,
                     "sharpness_amount": result.optimization_params.sharpness_amount,
                     "noise_reduction": result.optimization_params.noise_reduction,

@@ -25,6 +25,7 @@ dependencies = [
     "piexif>=1.1.3",            # EXIF metadata handling
     "numpy>=1.26.0",            # Image array operations
     "opencv-python>=4.8.0",     # Image analysis
+    "defusedxml>=0.7.1",        # Safe XML parsing for XMP metadata
     "rich>=13.0.0",             # CLI progress and formatting
     "click>=8.1.0",             # CLI framework
 ]
@@ -130,6 +131,7 @@ ignore_missing_imports = false
 [[tool.mypy.overrides]]
 module = [
     "cv2.*",
+    "defusedxml.*",
     "pillow_heif.*",
     "piexif.*",
 ]

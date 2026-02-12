@@ -34,6 +34,7 @@ class OptimizationParamGenerator:
         contrast_adjustment = self._calculate_contrast_adjustment(metrics)
         highlight_recovery = self._calculate_highlight_recovery(metrics)
         shadow_lift = self._calculate_shadow_lift(metrics)
+        face_relight_strength = self._calculate_face_relight_strength(metrics)
         saturation_adjustment = self._calculate_saturation_adjustment(metrics)
         sharpness_amount = self._calculate_sharpness(metrics)
         noise_reduction = self._calculate_noise_reduction(metrics)
@@ -44,6 +45,7 @@ class OptimizationParamGenerator:
             contrast_adjustment=contrast_adjustment,
             shadow_lift=shadow_lift,
             highlight_recovery=highlight_recovery,
+            face_relight_strength=face_relight_strength,
             saturation_adjustment=saturation_adjustment,
             sharpness_amount=sharpness_amount,
             noise_reduction=noise_reduction,
@@ -212,6 +214,52 @@ class OptimizationParamGenerator:
                 adjustment = 1.0 - (metrics.saturation_level - target_saturation) * 0.3
 
         return float(np.clip(adjustment, 0.5, 1.5))
+
+    def _calculate_face_relight_strength(self, metrics: ImageMetrics) -> float:
+        """Calculate local face relighting strength for backlit portraits.
+
+        The value is conservative by default and primarily activates for
+        backlit scenes with shadow pressure. It is intentionally reduced when
+        highlight clipping is already high to avoid flattening bright backgrounds.
+
+        Args:
+            metrics: Image analysis metrics
+
+        Returns:
+            Face relighting strength (0.0 to 1.0)
+        """
+        if not metrics.is_backlit:
+            return 0.0
+
+        # Base activation for backlit scenes.
+        strength = 0.18
+
+        # Darker overall exposure generally means face region needs more lift.
+        if metrics.exposure_level < -0.6:
+            strength += 0.12
+        elif metrics.exposure_level < -0.2:
+            strength += 0.06
+
+        # Heavy shadow clipping suggests subject-side tones are crushed.
+        if metrics.shadow_clipping_percent > 10.0:
+            strength += 0.12
+        elif metrics.shadow_clipping_percent > 4.0:
+            strength += 0.06
+
+        # If skin tones are detected, the scene is more likely portrait-relevant.
+        if metrics.skin_tone_detected:
+            strength += 0.04
+
+        # Strong highlight clipping means we should avoid aggressive local lift.
+        if metrics.highlight_clipping_percent > 6.0:
+            strength -= 0.08
+        elif metrics.highlight_clipping_percent > 2.0:
+            strength -= 0.04
+
+        if self.style_prefs.natural_appearance:
+            strength *= 0.85
+
+        return float(np.clip(strength, 0.0, 0.6))
 
     def _calculate_sharpness(self, metrics: ImageMetrics) -> float:
         """Calculate sharpening amount based on current sharpness.

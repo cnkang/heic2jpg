@@ -125,6 +125,7 @@ class OptimizationParams:
         contrast_adjustment: Contrast multiplier (0.5 to 1.5)
         shadow_lift: Shadow lift amount (0.0 to 1.0)
         highlight_recovery: Highlight recovery amount (0.0 to 1.0)
+        face_relight_strength: Local face relighting strength (0.0 to 1.0)
         saturation_adjustment: Saturation multiplier (0.5 to 1.5)
         sharpness_amount: Sharpening amount (0.0 to 2.0)
         noise_reduction: Noise reduction amount (0.0 to 1.0)
@@ -139,6 +140,7 @@ class OptimizationParams:
     sharpness_amount: float
     noise_reduction: float
     skin_tone_protection: bool
+    face_relight_strength: float = 0.0
 
 
 @dataclass
