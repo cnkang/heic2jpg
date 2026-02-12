@@ -196,19 +196,19 @@ def main(
     Examples:
 
         # Convert a single file
-        heic-converter photo.heic
+        heic2jpg photo.heic
 
         # Convert with custom quality
-        heic-converter photo.heic --quality 95
+        heic2jpg photo.heic --quality 95
 
         # Batch convert with output directory
-        heic-converter *.heic --output-dir ./converted
+        heic2jpg *.heic --output-dir ./converted
 
         # Batch convert without overwriting existing files
-        heic-converter *.heic --no-overwrite
+        heic2jpg *.heic --no-overwrite
 
         # Verbose logging
-        heic-converter photo.heic --verbose
+        heic2jpg photo.heic --verbose
     """
     # Handle version flag
     if version:

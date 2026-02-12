@@ -59,16 +59,16 @@ uv sync
 uv pip install -e .
 
 # 4. 验证安装
-heic-converter --version
+heic2jpg --version
 ```
 
-安装完成后，`heic-converter` 命令就可以在任何目录使用了。
+安装完成后，`heic2jpg` 命令就可以在任何目录使用了。
 
 ### 快速测试
 
 ```bash
 # 测试转换（假设你有一个 test.heic 文件）
-heic-converter test.heic
+heic2jpg test.heic
 
 # 如果没有 HEIC 文件，可以先运行测试确保一切正常
 uv run pytest tests/unit -v
@@ -80,48 +80,48 @@ uv run pytest tests/unit -v
 
 ```bash
 # 转换单个文件（输出到同一目录）
-heic-converter photo.heic
+heic2jpg photo.heic
 
 # 使用自定义质量转换
-heic-converter photo.heic --quality 95
+heic2jpg photo.heic --quality 95
 
 # 转换到指定目录
-heic-converter photo.heic --output-dir ./converted
+heic2jpg photo.heic --output-dir ./converted
 ```
 
 ### 批量转换同一目录下的所有 HEIC 文件
 
 ```bash
 # 方法 1: 使用通配符（推荐）
-heic-converter *.heic
+heic2jpg *.heic
 
 # 方法 2: 使用通配符并指定输出目录
-heic-converter *.heic --output-dir ./converted
+heic2jpg *.heic --output-dir ./converted
 
 # 方法 3: 明确指定多个文件
-heic-converter photo1.heic photo2.heic photo3.heic
+heic2jpg photo1.heic photo2.heic photo3.heic
 
 # 方法 4: 批量转换且不覆盖已存在的文件
-heic-converter *.heic --no-overwrite
+heic2jpg *.heic --no-overwrite
 
 # 方法 5: 批量转换并显示详细日志
-heic-converter *.heic --verbose
+heic2jpg *.heic --verbose
 ```
 
 ### 高级用法
 
 ```bash
 # 批量转换，自定义质量，输出到指定目录
-heic-converter *.heic --quality 95 --output-dir ./converted
+heic2jpg *.heic --quality 95 --output-dir ./converted
 
 # 批量转换，不覆盖现有文件，显示详细日志
-heic-converter *.heic --no-overwrite --verbose
+heic2jpg *.heic --no-overwrite --verbose
 
 # 显示帮助信息
-heic-converter --help
+heic2jpg --help
 
 # 显示版本信息
-heic-converter --version
+heic2jpg --version
 ```
 
 ### 使用示例
@@ -140,7 +140,7 @@ photos/
 cd photos
 
 # 批量转换所有 HEIC 文件到当前目录
-heic-converter *.heic
+heic2jpg *.heic
 
 # 转换后的目录结构
 photos/
@@ -158,7 +158,7 @@ photos/
 
 ```bash
 # 批量转换并输出到 converted 目录
-heic-converter *.heic --output-dir ./converted
+heic2jpg *.heic --output-dir ./converted
 
 # 转换后的目录结构
 photos/
@@ -220,7 +220,7 @@ uv run pytest --cov=heic_converter --cov-report=html
 
 ```bash
 # 批量转换代表性样本目录
-heic-converter samples/*.HEIC samples/*.heic --output-dir /tmp/sample-output
+heic2jpg samples/*.HEIC samples/*.heic --output-dir /tmp/sample-output
 ```
 
 - 对机器标记为风险或边缘可疑的图片做人工并排复核（输入 vs 输出）。

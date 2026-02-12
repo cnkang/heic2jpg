@@ -59,16 +59,16 @@ uv sync
 uv pip install -e .
 
 # 4. Verify installation
-heic-converter --version
+heic2jpg --version
 ```
 
-After installation, the `heic-converter` command will be available from any directory.
+After installation, the `heic2jpg` command will be available from any directory.
 
 ### Quick Test
 
 ```bash
 # Test conversion (assuming you have a test.heic file)
-heic-converter test.heic
+heic2jpg test.heic
 
 # If you don't have HEIC files, run tests to ensure everything works
 uv run pytest tests/unit -v
@@ -80,48 +80,48 @@ uv run pytest tests/unit -v
 
 ```bash
 # Convert a single file (output to same directory)
-heic-converter photo.heic
+heic2jpg photo.heic
 
 # Convert with custom quality
-heic-converter photo.heic --quality 95
+heic2jpg photo.heic --quality 95
 
 # Convert to specific directory
-heic-converter photo.heic --output-dir ./converted
+heic2jpg photo.heic --output-dir ./converted
 ```
 
 ### Batch Convert All HEIC Files in a Directory
 
 ```bash
 # Method 1: Use wildcards (recommended)
-heic-converter *.heic
+heic2jpg *.heic
 
 # Method 2: Use wildcards with output directory
-heic-converter *.heic --output-dir ./converted
+heic2jpg *.heic --output-dir ./converted
 
 # Method 3: Explicitly specify multiple files
-heic-converter photo1.heic photo2.heic photo3.heic
+heic2jpg photo1.heic photo2.heic photo3.heic
 
 # Method 4: Batch convert without overwriting existing files
-heic-converter *.heic --no-overwrite
+heic2jpg *.heic --no-overwrite
 
 # Method 5: Batch convert with verbose logging
-heic-converter *.heic --verbose
+heic2jpg *.heic --verbose
 ```
 
 ### Advanced Usage
 
 ```bash
 # Batch convert with custom quality and output directory
-heic-converter *.heic --quality 95 --output-dir ./converted
+heic2jpg *.heic --quality 95 --output-dir ./converted
 
 # Batch convert without overwriting, with verbose logging
-heic-converter *.heic --no-overwrite --verbose
+heic2jpg *.heic --no-overwrite --verbose
 
 # Show help
-heic-converter --help
+heic2jpg --help
 
 # Show version
-heic-converter --version
+heic2jpg --version
 ```
 
 ### Usage Examples
@@ -140,7 +140,7 @@ photos/
 cd photos
 
 # Batch convert all HEIC files to current directory
-heic-converter *.heic
+heic2jpg *.heic
 
 # Directory structure after conversion
 photos/
@@ -158,7 +158,7 @@ Or output to a separate directory:
 
 ```bash
 # Batch convert and output to converted directory
-heic-converter *.heic --output-dir ./converted
+heic2jpg *.heic --output-dir ./converted
 
 # Directory structure after conversion
 photos/
@@ -220,7 +220,7 @@ Recommended workflow:
 
 ```bash
 # Convert a representative sample directory
-heic-converter samples/*.HEIC samples/*.heic --output-dir /tmp/sample-output
+heic2jpg samples/*.HEIC samples/*.heic --output-dir /tmp/sample-output
 ```
 
 - Check flagged or borderline images manually (input vs output side-by-side).

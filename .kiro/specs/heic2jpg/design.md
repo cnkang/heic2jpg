@@ -716,14 +716,14 @@ Both are necessary for comprehensive coverage. Unit tests catch concrete bugs in
 **Configuration**:
 - Minimum 100 iterations per property test (due to randomization)
 - Each property test must reference its design document property
-- Tag format: `# Feature: heic-to-jpg-converter, Property {number}: {property_text}`
+- Tag format: `# Feature: heic2jpg, Property {number}: {property_text}`
 
 **Example Property Test Structure**:
 ```python
 from hypothesis import given, strategies as st
 import pytest
 
-# Feature: heic-to-jpg-converter, Property 1: HEIC to JPG Conversion Success
+# Feature: heic2jpg, Property 1: HEIC to JPG Conversion Success
 @given(heic_file=st.heic_files())  # Custom strategy
 @pytest.mark.property_test
 def test_heic_to_jpg_conversion_preserves_dimensions(heic_file):
@@ -987,7 +987,7 @@ dev = [
 ## Project Structure
 
 ```
-heic-to-jpg-converter/
+heic2jpg/
 ├── .github/
 │   └── workflows/
 │       ├── test.yml              # Test automation
@@ -1071,7 +1071,7 @@ heic-to-jpg-converter/
 
 ### Package Distribution
 
-- Publish to PyPI as `heic-to-jpg-converter`
+- Publish to PyPI as `heic2jpg`
 - Semantic versioning (MAJOR.MINOR.PATCH)
 - Automated releases via GitHub Actions
 - Include pre-built wheels for major platforms
@@ -1080,41 +1080,41 @@ heic-to-jpg-converter/
 
 ```bash
 # Via uv (recommended)
-uv pip install heic-to-jpg-converter
+uv pip install heic2jpg
 
 # Via pip
-pip install heic-to-jpg-converter
+pip install heic2jpg
 
 # From source
-git clone https://github.com/user/heic-to-jpg-converter
-cd heic-to-jpg-converter
+git clone https://github.com/user/heic2jpg
+cd heic2jpg
 uv sync
-uv run heic-converter --help
+uv run heic2jpg --help
 ```
 
 ### CLI Usage Examples
 
 ```bash
 # Convert single file
-heic-converter input.heic
+heic2jpg input.heic
 
 # Convert with custom quality
-heic-converter input.heic --quality 95
+heic2jpg input.heic --quality 95
 
 # Batch convert directory
-heic-converter *.heic --output-dir ./converted
+heic2jpg *.heic --output-dir ./converted
 
 # Batch convert with no overwrite
-heic-converter *.heic --no-overwrite
+heic2jpg *.heic --no-overwrite
 
 # Verbose logging
-heic-converter input.heic --verbose
+heic2jpg input.heic --verbose
 
 # Show help
-heic-converter --help
+heic2jpg --help
 
 # Show version
-heic-converter --version
+heic2jpg --version
 ```
 
 ## Future Enhancements
