@@ -45,10 +45,12 @@ jobs:
       run: |
         uv run pytest tests/property -v --ignore=tests/property/test_batch_processor_properties.py
 
-    - name: Upload coverage to Codecov
+    - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
       if: matrix.os == 'ubuntu-latest'
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: cnkang/heic2jpg
         files: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
