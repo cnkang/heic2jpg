@@ -47,11 +47,11 @@ This project adheres to a code of conduct that all contributors are expected to 
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/heic-to-jpg-converter.git
-cd heic-to-jpg-converter
+git clone https://github.com/YOUR_USERNAME/heic2jpg.git
+cd heic2jpg
 
 # Add upstream remote
-git remote add upstream https://github.com/ORIGINAL_OWNER/heic-to-jpg-converter.git
+git remote add upstream https://github.com/ORIGINAL_OWNER/heic2jpg.git
 
 # Install dependencies
 uv sync --all-extras

@@ -15,6 +15,7 @@ A Python application that converts iPhone HEIC photos to high-quality JPG format
 - 🚧 **Alpha / In Active Development**
 - ✅ **CI Checks**: tests, linting, and security scans run via GitHub Actions
 - 📊 **Coverage**: tracked automatically with Codecov
+- 📦 **Project ID**: `heic2jpg`
 
 ## Features
 
