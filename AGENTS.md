@@ -305,7 +305,7 @@ uv run pytest tests/unit/test_converter.py
 uv run pytest tests/unit/test_converter.py::TestImageConverter::test_heic_decoding
 
 # With coverage
-uv run pytest --cov=heic_converter --cov-report=html
+uv run pytest --cov=heic2jpg --cov-report=html
 
 # Property tests with statistics
 uv run pytest tests/property -v --hypothesis-show-statistics

@@ -995,7 +995,7 @@ heic2jpg/
 │       ├── security.yml          # Security scanning
 │       └── dependabot.yml        # Dependency updates
 ├── src/
-│   └── heic_converter/
+│   └── heic2jpg/
 │       ├── __init__.py
 │       ├── __main__.py           # CLI entry point
 │       ├── cli.py                # CLI interface

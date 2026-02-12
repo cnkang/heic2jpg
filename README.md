@@ -17,6 +17,19 @@ A Python application that converts iPhone HEIC photos to high-quality JPG format
 - 📊 **Coverage**: tracked automatically with Codecov
 - 📦 **Project ID**: `heic2jpg`
 
+## Naming and Structure
+
+- `heic2jpg` is the repository name, project identifier, and primary CLI command.
+- `src/heic2jpg` is intentionally kept as the Python package namespace to avoid breaking existing imports and test/tooling integrations.
+- `.kiro/specs/heic2jpg` keeps the spec directory aligned with the current project ID.
+
+## Why This Is Not Reinventing the Wheel
+
+- This project uses mature libraries (`pillow`, `pillow-heif`, `opencv-python`) instead of re-implementing image codecs or generic filters.
+- The added value is print-focused optimization logic that generic converters do not provide: per-image analysis, adaptive adjustments, and conservative handling for backlit/highlight/low-light scenes.
+- It preserves print-relevant metadata and workflow artifacts (EXIF, ICC profile, metrics JSON) for traceable quality review.
+- It includes engineering guardrails for real usage: secure file/path validation, batch error isolation, and automated CI/security checks.
+
 ## Features
 
 - **High Quality**: Default quality 100 (minimal JPEG compression) for optimal print quality
@@ -209,7 +222,7 @@ uv run pytest tests/unit
 uv run pytest tests/property -v --hypothesis-show-statistics
 
 # Run with coverage
-uv run pytest --cov=heic_converter --cov-report=html
+uv run pytest --cov=heic2jpg --cov-report=html
 ```
 
 ## Quality Validation and Manual Review

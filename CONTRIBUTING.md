@@ -106,7 +106,7 @@ uv run pytest
 uv run pytest tests/unit/test_your_module.py
 
 # Run with coverage
-uv run pytest --cov=heic_converter --cov-report=html
+uv run pytest --cov=heic2jpg --cov-report=html
 
 # Check coverage report
 open htmlcov/index.html
@@ -245,8 +245,8 @@ import numpy as np
 from PIL import Image
 
 # 3. Local modules
-from heic_converter.models import Config
-from heic_converter.errors import ConversionError
+from heic2jpg.models import Config
+from heic2jpg.errors import ConversionError
 ```
 
 ### Docstring Format
@@ -459,7 +459,7 @@ uv run pytest --pdb
 
 ```bash
 # Profile code
-python -m cProfile -o profile.stats -m heic_converter input.heic
+python -m cProfile -o profile.stats -m heic2jpg input.heic
 
 # View results
 python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumulative'); p.print_stats(20)"

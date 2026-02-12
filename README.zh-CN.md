@@ -17,6 +17,19 @@
 - 📊 **覆盖率**：通过 Codecov 自动跟踪
 - 📦 **项目标识**：`heic2jpg`
 
+## 命名与目录约定
+
+- `heic2jpg` 是仓库名、项目标识和主 CLI 命令名。
+- `src/heic2jpg` 作为 Python 包命名空间被有意保留，用于避免破坏既有导入路径、测试与工具链集成。
+- `.kiro/specs/heic2jpg` 已与当前项目标识保持一致。
+
+## 为什么这不是“再造轮子”
+
+- 项目复用成熟基础库（`pillow`、`pillow-heif`、`opencv-python`），并不重复实现编解码器或通用滤镜能力。
+- 主要价值是通用转换器不具备的“银盐打印导向”优化逻辑：逐图分析、自适应参数、对逆光/高光/弱光场景的保守且可控处理。
+- 保留打印相关关键信息与可追溯数据（EXIF、ICC 色彩配置、metrics JSON），便于质量复核与持续调优。
+- 同时具备工程化护栏：安全的路径/文件校验、批处理错误隔离、自动化 CI 与安全扫描。
+
 ## 功能特性
 
 - **高质量**：默认质量 100（JPEG 最低压缩），确保最佳打印质量
@@ -209,7 +222,7 @@ uv run pytest tests/unit
 uv run pytest tests/property -v --hypothesis-show-statistics
 
 # 运行测试并生成覆盖率报告
-uv run pytest --cov=heic_converter --cov-report=html
+uv run pytest --cov=heic2jpg --cov-report=html
 ```
 
 ## 质量验证与人工复核
