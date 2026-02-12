@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "pillow>=10.0.0",           # JPG encoding/decoding
+    "pillow>=12.1.1",           # JPG encoding/decoding (CVE-2026-25990 fix)
     "pillow-heif>=0.13.0",      # HEIC decoding
     "piexif>=1.1.3",            # EXIF metadata handling
     "numpy>=1.26.0",            # Image array operations
